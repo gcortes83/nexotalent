@@ -1,0 +1,163 @@
+
+ RUN  v4.1.12 /Users/guillermocortes/development/training/LIDR/project/nexotalent/apps/api
+
+ ❯ |unit| test/unit/application-status.test.ts (27 tests | 27 failed) 6ms
+     × permite submitted → in_review 2ms
+     × permite in_review → shortlisted 0ms
+     × permite shortlisted → interview_scheduled 0ms
+     × permite interview_scheduled → interview_done 0ms
+     × permite interview_scheduled → shortlisted 0ms
+     × permite interview_done → offer 0ms
+     × permite offer → hired 0ms
+     × permite submitted → rejected 0ms
+     × permite offer → rejected 0ms
+     × rechaza hired → in_review 0ms
+     × rechaza rejected → shortlisted 0ms
+     × rechaza withdrawn → in_review 0ms
+     × rechaza submitted → offer 0ms
+     × rechaza submitted → hired 1ms
+     × rechaza in_review → withdrawn 0ms
+     × rechaza in_review → in_review 0ms
+     × puede retirarse desde submitted 0ms
+     × puede retirarse desde in_review 0ms
+     × puede retirarse desde shortlisted 0ms
+     × puede retirarse desde interview_scheduled 0ms
+     × puede retirarse desde interview_done 0ms
+     × puede retirarse desde offer 0ms
+     × no puede avanzar su propia postulación 0ms
+     × no puede retirarse de un estado terminal 0ms
+     × solo humanos pasan a rejected o hired 0ms
+     × el sistema puede reflejar una entrevista agendada o cancelada (v2: webhook de Calendly) 0ms
+   × los estados terminales no tienen salida para nadie 0ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 27 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| test/unit/application-status.test.ts > canTransition · reclutador > permite submitted → in_review
+ FAIL  |unit| test/unit/application-status.test.ts > canTransition · reclutador > permite in_review → shortlisted
+ FAIL  |unit| test/unit/application-status.test.ts > canTransition · reclutador > permite shortlisted → interview_scheduled
+ FAIL  |unit| test/unit/application-status.test.ts > canTransition · reclutador > permite interview_scheduled → interview_done
+ FAIL  |unit| test/unit/application-status.test.ts > canTransition · reclutador > permite interview_scheduled → shortlisted
+ FAIL  |unit| test/unit/application-status.test.ts > canTransition · reclutador > permite interview_done → offer
+ FAIL  |unit| test/unit/application-status.test.ts > canTransition · reclutador > permite offer → hired
+ FAIL  |unit| test/unit/application-status.test.ts > canTransition · reclutador > permite submitted → rejected
+ FAIL  |unit| test/unit/application-status.test.ts > canTransition · reclutador > permite offer → rejected
+Error: not implemented
+ ❯ canTransition src/modules/applications/domain/status.ts:32:9
+     30|
+     31| export function canTransition(_from: ApplicationStatus, _to: Applicati…
+     32|   throw new Error('not implemented');
+       |         ^
+     33| }
+     34|
+ ❯ test/unit/application-status.test.ts:29:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/27]⎯
+
+ FAIL  |unit| test/unit/application-status.test.ts > canTransition · reclutador > rechaza hired → in_review
+ FAIL  |unit| test/unit/application-status.test.ts > canTransition · reclutador > rechaza rejected → shortlisted
+ FAIL  |unit| test/unit/application-status.test.ts > canTransition · reclutador > rechaza withdrawn → in_review
+ FAIL  |unit| test/unit/application-status.test.ts > canTransition · reclutador > rechaza submitted → offer
+ FAIL  |unit| test/unit/application-status.test.ts > canTransition · reclutador > rechaza submitted → hired
+ FAIL  |unit| test/unit/application-status.test.ts > canTransition · reclutador > rechaza in_review → withdrawn
+ FAIL  |unit| test/unit/application-status.test.ts > canTransition · reclutador > rechaza in_review → in_review
+Error: not implemented
+ ❯ canTransition src/modules/applications/domain/status.ts:32:9
+     30|
+     31| export function canTransition(_from: ApplicationStatus, _to: Applicati…
+     32|   throw new Error('not implemented');
+       |         ^
+     33| }
+     34|
+ ❯ test/unit/application-status.test.ts:41:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/27]⎯
+
+ FAIL  |unit| test/unit/application-status.test.ts > canTransition · candidato > puede retirarse desde submitted
+ FAIL  |unit| test/unit/application-status.test.ts > canTransition · candidato > puede retirarse desde in_review
+ FAIL  |unit| test/unit/application-status.test.ts > canTransition · candidato > puede retirarse desde shortlisted
+ FAIL  |unit| test/unit/application-status.test.ts > canTransition · candidato > puede retirarse desde interview_scheduled
+ FAIL  |unit| test/unit/application-status.test.ts > canTransition · candidato > puede retirarse desde interview_done
+ FAIL  |unit| test/unit/application-status.test.ts > canTransition · candidato > puede retirarse desde offer
+Error: not implemented
+ ❯ canTransition src/modules/applications/domain/status.ts:32:9
+     30|
+     31| export function canTransition(_from: ApplicationStatus, _to: Applicati…
+     32|   throw new Error('not implemented');
+       |         ^
+     33| }
+     34|
+ ❯ test/unit/application-status.test.ts:49:14
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/27]⎯
+
+ FAIL  |unit| test/unit/application-status.test.ts > canTransition · candidato > no puede avanzar su propia postulación
+Error: not implemented
+ ❯ canTransition src/modules/applications/domain/status.ts:32:9
+     30|
+     31| export function canTransition(_from: ApplicationStatus, _to: Applicati…
+     32|   throw new Error('not implemented');
+       |         ^
+     33| }
+     34|
+ ❯ test/unit/application-status.test.ts:54:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/27]⎯
+
+ FAIL  |unit| test/unit/application-status.test.ts > canTransition · candidato > no puede retirarse de un estado terminal
+Error: not implemented
+ ❯ canTransition src/modules/applications/domain/status.ts:32:9
+     30|
+     31| export function canTransition(_from: ApplicationStatus, _to: Applicati…
+     32|   throw new Error('not implemented');
+       |         ^
+     33| }
+     34|
+ ❯ test/unit/application-status.test.ts:58:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/27]⎯
+
+ FAIL  |unit| test/unit/application-status.test.ts > canTransition · sistema (automatizaciones) > solo humanos pasan a rejected o hired
+Error: not implemented
+ ❯ canTransition src/modules/applications/domain/status.ts:32:9
+     30|
+     31| export function canTransition(_from: ApplicationStatus, _to: Applicati…
+     32|   throw new Error('not implemented');
+       |         ^
+     33| }
+     34|
+ ❯ test/unit/application-status.test.ts:64:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/27]⎯
+
+ FAIL  |unit| test/unit/application-status.test.ts > canTransition · sistema (automatizaciones) > el sistema puede reflejar una entrevista agendada o cancelada (v2: webhook de Calendly)
+Error: not implemented
+ ❯ canTransition src/modules/applications/domain/status.ts:32:9
+     30|
+     31| export function canTransition(_from: ApplicationStatus, _to: Applicati…
+     32|   throw new Error('not implemented');
+       |         ^
+     33| }
+     34|
+ ❯ test/unit/application-status.test.ts:69:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/27]⎯
+
+ FAIL  |unit| test/unit/application-status.test.ts > los estados terminales no tienen salida para nadie
+Error: not implemented
+ ❯ canTransition src/modules/applications/domain/status.ts:32:9
+     30|
+     31| export function canTransition(_from: ApplicationStatus, _to: Applicati…
+     32|   throw new Error('not implemented');
+       |         ^
+     33| }
+     34|
+ ❯ test/unit/application-status.test.ts:78:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/27]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  27 failed (27)
+   Start at  05:41:22
+   Duration  160ms (transform 18ms, setup 0ms, import 28ms, tests 6ms, environment 0ms)
+
