@@ -1,0 +1,31 @@
+
+ RUN  v4.1.12 /Users/guillermocortes/development/training/LIDR/project/nexotalent/apps/web
+
+ ❯ src/components/SkillRadarChart.test.tsx (7 tests | 1 failed) 107ms
+     × la tabla accesible va dentro de un contenedor sr-only (una <table> ignora width: 1px y desborda en móvil) 7ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/SkillRadarChart.test.tsx > SkillRadarChart > la tabla accesible va dentro de un contenedor sr-only (una <table> ignora width: 1px y desborda en móvil)
+Error: [2mexpect([22m[31melement[39m[2m).not.toHaveClass([22m[32m[32m"sr-only"[32m[39m[2m)[22m
+
+Expected the element not to have class:
+[32m  sr-only[39m
+Received:
+[31m  sr-only[39m
+ ❯ src/components/SkillRadarChart.test.tsx:19:23
+     17|     render(<SkillRadarChart data={[{ axis: 'Testing automatizado', req…
+     18|     const table = screen.getByRole('table', { name: /vacante vs\. tú/i…
+     19|     expect(table).not.toHaveClass('sr-only');
+       |                       ^
+     20|     expect(table.parentElement).toHaveClass('sr-only');
+     21|     expect(table.parentElement!.tagName).toBe('DIV');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+   Start at  08:25:32
+   Duration  852ms (transform 57ms, setup 138ms, import 46ms, tests 107ms, environment 472ms)
+

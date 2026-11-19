@@ -53,25 +53,28 @@ export function SkillRadarChart({ data: raw, size = 480, ariaLabel, showLegend =
           <span className="radar-soft-legend__dot" aria-hidden="true" /> {t.soft.legend}
         </figcaption>
       )}
-      <table className="sr-only">
-        <caption>{ariaLabel}</caption>
-        <thead>
-          <tr>
-            <th scope="col">{axisHeader ?? t.radar.category}</th>
-            <th scope="col">{t.radar.required}</th>
-            <th scope="col">{t.radar.yours}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((p) => (
-            <tr key={p.axis}>
-              <th scope="row">{p.axis}</th>
-              <td>{p.required}</td>
-              <td>{p.candidate}</td>
+      {/* El sr-only va en un div: una <table> no se encoge a width: 1px y desborda la página en móvil. */}
+      <div className="sr-only">
+        <table>
+          <caption>{ariaLabel}</caption>
+          <thead>
+            <tr>
+              <th scope="col">{axisHeader ?? t.radar.category}</th>
+              <th scope="col">{t.radar.required}</th>
+              <th scope="col">{t.radar.yours}</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {data.map((p) => (
+              <tr key={p.axis}>
+                <th scope="row">{p.axis}</th>
+                <td>{p.required}</td>
+                <td>{p.candidate}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </figure>
   );
 }

@@ -451,6 +451,9 @@ form .urgent-toggle .small { grid-column: 2; }
 .filters-panel .facet { flex-wrap: nowrap; min-width: 0; }
 .filters-panel .urgent-toggle .row { display: flex; flex: 1; }
 .filters-panel .urgent-toggle .row > :last-child { overflow: hidden; text-overflow: ellipsis; }
+/* Holgura para fuentes de respaldo anchas (p. ej. DejaVu Sans en Linux): «Solo vacantes urgentes» no se recorta. */
+.filters-panel .urgent-toggle { gap: .4rem; padding-inline: .4rem; }
+.filters-panel .urgent-toggle .row { gap: .3rem; font-size: .95rem; }
 .filters-panel .skill-facets .chip { white-space: nowrap; }
 
 .auth > .ai-badge { display: inline-block; margin: 0 0 .5rem; }

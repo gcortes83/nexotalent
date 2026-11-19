@@ -92,7 +92,7 @@ describe('ChangeApplicationStatus', () => {
 | Nivel | Herramienta | Ubicación | Cantidad | Comando |
 |---|---|---|---|---|
 | Unit + HTTP (API) | Vitest + `app.inject` | `apps/api/test/{unit,http}` | 137 ✅ | `npm run test:api` |
-| Componentes y páginas (web) | Vitest + Testing Library + `fakeApi` | `apps/web/src/**/*.test.tsx` | 81 ✅ | `npm run test:web` |
+| Componentes y páginas (web) | Vitest + Testing Library + `fakeApi` | `apps/web/src/**/*.test.tsx` | 82 ✅ | `npm run test:web` |
 | Hooks del harness | `node:test` | `.claude/hooks` | 31 ✅ | `npm run test:hooks` |
 | Integración PostgreSQL | Vitest + pgvector real | `apps/api/test/integration` | ⏳ sin ejecutar para 0002–0004 | `make test-int` (Docker) |
 | Funcionales en vivo | `node:test` contra la app levantada | `tests/functional` | UC-00…UC-16 | `make test-functional` |

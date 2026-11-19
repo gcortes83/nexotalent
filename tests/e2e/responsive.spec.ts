@@ -47,9 +47,12 @@ const overflowing = (page: Page) =>
     return [...document.querySelectorAll<HTMLElement>('body *')]
       .filter((el) => {
         const r = el.getBoundingClientRect();
-        if (!r.width || getComputedStyle(el).position === 'fixed') return false;
-        // Ocultos a propósito para lectores de pantalla o enlaces de salto.
-        if (el.closest('.sr-only, .skip-link')) return false;
+        if (!r.width) return false;
+        // Lo que vive dentro de un contenedor fijo (p. ej. la aurora del fondo animado) no genera scroll del documento.
+        for (let p: HTMLElement | null = el; p; p = p.parentElement) if (getComputedStyle(p).position === 'fixed') return false;
+        // El enlace de salto se esconde fuera de pantalla a propósito. Los .sr-only SÍ se reportan: una
+        // <table class="sr-only"> ignora width: 1px y fue la causa del scroll en móvil con fuentes anchas.
+        if (el.closest('.skip-link')) return false;
         // Contenedores con scroll horizontal propio (p. ej. stepper) son válidos.
         for (let p = el.parentElement; p; p = p.parentElement) if (['auto', 'scroll'].includes(getComputedStyle(p).overflowX)) return false;
         return r.right > w + 1 || r.left < -1;

@@ -13,6 +13,14 @@ describe('SkillRadarChart', () => {
     expect(within(rows[2]!).getAllByRole('cell').map((c) => c.textContent)).toEqual(['3', '0']);
   });
 
+  it('la tabla accesible va dentro de un contenedor sr-only (una <table> ignora width: 1px y desborda en móvil)', () => {
+    render(<SkillRadarChart data={[{ axis: 'Testing automatizado', required: 3, candidate: 4 }]} />);
+    const table = screen.getByRole('table', { name: /vacante vs\. tú/i });
+    expect(table).not.toHaveClass('sr-only');
+    expect(table.parentElement).toHaveClass('sr-only');
+    expect(table.parentElement!.tagName).toBe('DIV');
+  });
+
   it('estado vacío sin romper', () => {
     render(<SkillRadarChart data={[]} />);
     expect(screen.getByText(/no tiene skills requeridas/i)).toBeInTheDocument();

@@ -5,10 +5,10 @@ Plataforma de reclutamiento AI-native (polyrepo · Node.js · React · AWS). Est
 | # | Documento | Contenido |
 |---|---|---|
 | 01 | [Visión del producto](01-vision-producto.md) | Problema, personas, roles, funcionalidades, estados, modelo de negocio, benchmark de competidores |
-| 02 | [Arquitectura](02-arquitectura.md) | Microservicios, EDA, BFF, C4, optimización de llamadas, polyrepo, ADRs |
-| 03 | [Arquitectura de IA](03-arquitectura-ai.md) | LLM gateway, extracción, matching, radar, RAG, MCP, agentes, evals |
+| 02 | [Arquitectura](02-arquitectura.md) | Arquitectura de despliegue: microservicios, EDA, BFF, C4, optimización de llamadas, polyrepo, ADRs. Incluye el mapa módulo del MVP → servicio |
+| 03 | [Arquitectura de IA](03-arquitectura-ai.md) | Arquitectura de despliegue del `ai-svc`: LLM gateway, extracción, matching, radar, RAG, MCP, agentes, evals. Incluye qué está implementado en el MVP |
 | 04 | [Integraciones](04-integraciones.md) | Ingesta 1..N (API, endpoint, CSV, PDF), SAP/CRM/ATS, MCP, Calendly, Stripe |
-| 05 | [Eventos y notificaciones](05-eventos-notificaciones.md) | Catálogo de eventos, recordatorios 3/5 días, omnicanal |
+| 05 | [Eventos y notificaciones](05-eventos-notificaciones.md) | Arquitectura de despliegue por eventos: catálogo, recordatorios 3/5 días, omnicanal. Incluye el equivalente en proceso del MVP |
 | 06 | [Modelo de datos](06-modelo-datos.md) | ER en Mermaid, entidades, índices |
 | 07 | [API](07-api.md) | Catálogo y OpenAPI de endpoints principales |
 | 08 | [Frontend y UX](08-frontend-ux.md) | Design system, look & feel AI, pantallas, rendimiento |
@@ -20,6 +20,6 @@ Plataforma de reclutamiento AI-native (polyrepo · Node.js · React · AWS). Est
 | 14 | [Tickets de trabajo](14-tickets-trabajo.md) | Backend, frontend y base de datos |
 | 15 | [Roadmap](15-roadmap.md) | Fases, plan de 8 semanas, riesgos |
 
-Estado real del MVP web (monolito modular en `apps/`): ver §1.1–1.2 de [07](07-api.md), §6 de [08](08-frontend-ux.md), §8 de [10](10-estrategia-testing.md), los tickets del change `add-accounts-jobs-notifications` en [14](14-tickets-trabajo.md) y [`../CHANGELOG.md`](../CHANGELOG.md).
+El MVP se entrega como monolito modular ([ADR-0001](adr/0001-monolito-modular-mvp.md)); 02, 03 y 05 describen la arquitectura con la que se despliega (microservicios, eventos e IA) y cada uno abre con su nota de estado. Estado real del MVP web (monolito modular en `apps/`): ver §1.1–1.2 de [07](07-api.md), §6 de [08](08-frontend-ux.md), §8 de [10](10-estrategia-testing.md), los tickets del change `add-accounts-jobs-notifications` en [14](14-tickets-trabajo.md) y [`../CHANGELOG.md`](../CHANGELOG.md).
 
 Los prompts para generar y construir todo esto están en [`../prompts.md`](../prompts.md) (FASE C: C0–C19 ejecutados en la CLI); los de las apps móviles en [`../android-prompts.md`](../android-prompts.md) y [`../ios-prompts.md`](../ios-prompts.md).
