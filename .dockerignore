@@ -1,0 +1,14 @@
+**/node_modules
+**/dist
+**/coverage
+**/.env
+**/.env.*
+.git
+.github
+.idea
+.claude
+docs
+openspec
+tests
+*.md
+harness-log.jsonl

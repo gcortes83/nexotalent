@@ -1,0 +1,78 @@
+# Entorno local de NexoTalent AI. Solo datos sintéticos; credenciales de desarrollo.
+#
+#   make db-up        → postgres (desarrollo, :5432) + postgres-test (pruebas, :5433)
+#   make docker-up    → stack completo: bases + migrate (migra y siembra) + mailpit (:8025) + api (:4000) + web (:8080)
+#   make mail-up      → solo Mailpit (correos de desarrollo) para usarlo con make start y EMAIL_PROVIDER=smtp
+#   make docker-down  → detiene todo
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: nexo
+      POSTGRES_PASSWORD: nexo_local_only
+      POSTGRES_DB: nexotalent
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nexo -d nexotalent"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  # Base efímera para pruebas de integración (tmpfs: se borra al detener el contenedor).
+  postgres-test:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: nexo
+      POSTGRES_PASSWORD: nexo_local_only
+      POSTGRES_DB: nexotalent_test
+    ports: ["5433:5432"]
+    tmpfs: [/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nexo -d nexotalent_test"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  # Servidor SMTP de pruebas: captura los correos (UI en http://localhost:8025). Nunca envía a internet.
+  mailpit:
+    image: axllent/mailpit:v1.21
+    ports: ["8025:8025", "1025:1025"]
+
+  # Tarea única: aplica migraciones y recarga los datos sintéticos de demo.
+  migrate:
+    build: { context: ., dockerfile: apps/api/Dockerfile }
+    image: nexotalent-api:local
+    command: ["dist/cli/db.js", "migrate", "seed"]
+    environment:
+      DATABASE_URL: postgres://nexo:nexo_local_only@postgres:5432/nexotalent
+    depends_on:
+      postgres: { condition: service_healthy }
+    restart: "no"
+
+  api:
+    image: nexotalent-api:local
+    environment:
+      PORT: 4000
+      STORAGE: postgres
+      DATABASE_URL: postgres://nexo:nexo_local_only@postgres:5432/nexotalent
+      JWT_SECRET: ${JWT_SECRET:-change-me-docker-dev-secret-at-least-32-chars}
+      DEMO_AUTH: "true"
+      CORS_ORIGINS: http://localhost:8080,http://localhost:5173
+      AI_PROVIDER: mock
+      EMAIL_PROVIDER: smtp
+      SMTP_URL: smtp://mailpit:1025
+    ports: ["4000:4000"]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      mailpit: { condition: service_started }
+
+  web:
+    build: { context: ., dockerfile: apps/web/Dockerfile }
+    image: nexotalent-web:local
+    ports: ["8080:8080"]
+    depends_on:
+      api: { condition: service_healthy }
+
+volumes:
+  pgdata:

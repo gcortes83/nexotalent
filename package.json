@@ -1,0 +1,32 @@
+{
+  "name": "nexotalent",
+  "private": true,
+  "description": "NexoTalent AI — núcleo MVP (monolito modular)",
+  "workspaces": [
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev:api": "npm run dev -w @nexo/api",
+    "dev:web": "npm run dev -w @nexo/web",
+    "test": "npm test -w @nexo/api && npm test -w @nexo/web && npm run test:hooks",
+    "test:api": "npm test -w @nexo/api",
+    "test:web": "npm test -w @nexo/web",
+    "test:int": "npm run test:int -w @nexo/api",
+    "test:hooks": "node --test \".claude/hooks/test/*.test.mjs\"",
+    "coverage": "npm run coverage -w @nexo/api && npm run coverage -w @nexo/web",
+    "typecheck": "npm run typecheck -w @nexo/api && npm run typecheck -w @nexo/web",
+    "build": "npm run build -w @nexo/api && npm run build -w @nexo/web",
+    "db:up": "docker compose up -d --wait postgres postgres-test",
+    "db:migrate": "npm run db:migrate -w @nexo/api",
+    "db:seed": "npm run db:seed -w @nexo/api",
+    "lint:api": "npx @redocly/cli@1 lint api/openapi.yaml",
+    "test:functional": "node --test --test-concurrency=1 \"tests/functional/*.test.mjs\"",
+    "test:e2e": "playwright test -c tests/e2e/playwright.config.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.1"
+  }
+}
