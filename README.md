@@ -1100,7 +1100,53 @@ Detalle de los tickets en [docs/14-tickets-trabajo.md](docs/14-tickets-trabajo.m
 
 > Documenta 3 de las Pull Requests realizadas durante la ejecución del proyecto
 
-**Pull Request 1**
+**Pull Request 1 · [#1](https://github.com/gcortes83/nexotalent/pull/1) · feat: núcleo MVP web y change `add-accounts-jobs-notifications`**
+
+| Campo | Valor |
+|---|---|
+| Rama | `feat/mvp-web` → `main` |
+| Estado | Abierta (19/11/2026), sin revisiones todavía |
+| Tamaño | 194 archivos · +23,017 / −47 líneas · 2 commits |
+| Changes OpenSpec | `add-core-mvp` (0.1.0) y `add-accounts-jobs-notifications` (0.2.0) |
+| Historias | HU-01, HU-02 y HU-16…HU-21 |
+| CI | `test` ✅ · `functional` ❌ en la primera corrida (4 de 73 E2E de la auditoría responsiva). Corregido y verificado en local; falta una nueva corrida de CI (ver abajo) |
+
+*Descripción:* primera entrega del código. Lleva el repositorio de solo documentación a un **monolito modular** funcional
+(ADR-0001) con el núcleo de punta a punta —subir CV → confirmar skills → radar y score → postular → stepper → el
+reclutador cambia el estatus— y el change de cuentas, gestión de vacantes y notificaciones.
+
+*Qué incluye*
+1. **API (`apps/api`)**, hexagonal con módulos `identity`, `candidates`, `jobs`, `matching`, `applications` y `notifications`:
+   - Fórmula de match híbrida con radar y explicación; solo cuentan las skills `confirmed`.
+   - Máquina de estados de la postulación; `rejected` y `hired` solo los asigna un humano. Cambio de estatus con `If-Match`.
+   - Registro y login con contraseña (scrypt) para candidatos y empleadores.
+   - CRUD, publicación y cierre (soft delete) de vacantes. Importación CSV, JSON y PDF con reporte por fila y upsert por `externalId`.
+   - Catálogo con filtros facetados, paginación y vacantes urgentes.
+   - Notificaciones in-app y por email a través del puerto `EmailSender` (log o Mailpit).
+   - Adaptadores en memoria y PostgreSQL 16 + pgvector (índice HNSW). Migraciones expand-only `0001`–`0004`. Seed sintético de 100 vacantes (`example.com`).
+2. **Web (`apps/web`)**:
+   - Landing, catálogo con filtros y estado en la URL, detalle con `SkillRadarChart` (skills técnicas y soft skills) y `MatchScoreRing`.
+   - Perfil del candidato con CV y skills, `ApplicationStepper` y dashboard del empleador.
+   - i18n ES/EN sin dependencias, diseño responsivo (480 / 720 / 1024 px) y fondo animado que respeta `prefers-reduced-motion`.
+3. **Contrato:** `api/openapi.yaml` 0.2.0 y `apps/web/src/api/types.ts` sincronizados.
+4. **Harness y operación:**
+   - `.claude/` con hooks `block-dangerous`, `protect-files` y `pii-guard`, subagentes (`adversarial-reviewer`, `test-writer`, `spec-checker`) y comandos `/tdd` y `/review-pr`.
+   - `AGENTS.md`, `Makefile`, `docker-compose.yml` con Dockerfiles de API y web, y CI en `.github/workflows/ci.yml`.
+5. **Documentación:** specs y `tasks.md` de OpenSpec, `docs/06`–`docs/15`, prompts C0–C19 y `CHANGELOG.md`.
+
+*Commits*
+- `0b198b4` feat: núcleo MVP web y change `add-accounts-jobs-notifications`.
+- `6515866` test(api): fuerza el plan HNSW en la prueba de integración ANN. Usa `SET LOCAL` dentro de una transacción para que el `EXPLAIN` corra en la misma conexión, y limpia el esquema `notifications` en `beforeAll`.
+
+*Pruebas:* `make test` en verde (API 137, web 81, hooks 31). La suite funcional en vivo y los E2E (Playwright) corren en el job
+`functional` de CI.
+
+*Correcciones tras la primera corrida de CI*
+- El job `functional` falló en 4 escenarios de `tests/e2e/responsive.spec.ts` que solo se reproducen en Linux, donde la fuente de respaldo es DejaVu Sans (más ancha):
+  - A 360 px, el detalle de vacante tenía scroll horizontal. La causa real era la tabla accesible del radar: `<table class="sr-only">` ignora `width: 1px`. Ahora va dentro de un `div.sr-only`.
+  - A 900, 1280 y 1600 px, «Solo vacantes urgentes» se recortaba en el panel de filtros. Se ajustó la separación del interruptor.
+- Se reprodujo con la imagen de Playwright y DejaVu Sans. La evidencia roja y verde está en `docs/evidence/`.
+- Verificación local: typecheck, unitarias (API 137, web 82, hooks 31), cobertura, integración con pgvector (6), funcionales en vivo (42) y E2E (73), todo en verde.
 
 **Pull Request 2**
 

@@ -42,11 +42,17 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 - `prompts.md`: prompts C10–C19 enviados desde la CLI (versión reproducible + prompt original con hora), prompts operativos, estado de ejecución al 19/11/2026 y C9 con los pendientes actualizados.
 - OpenSpec: `design.md` y specs delta (`accounts`, `job-management`, `notifications`, `job-catalog`, `web-experience`, `candidate-profile`) del change `add-accounts-jobs-notifications`; `tasks.md` con las iteraciones web (§5) y la documentación (§6); `add-core-mvp` 3.4 (E2E) marcada como hecha; `project.md` con las capacidades nuevas.
 - `docs/06` (migraciones 0002–0004), `docs/07` (endpoints de OpenAPI 0.2.0), `docs/08` (rutas y transversales del MVP web), `docs/10` (inventario real de pruebas), `docs/13` (HU-16…HU-21 y estado en el MVP), `docs/14` (TK-QA-001/002, TK-BE-020…023, TK-FE-030…033, TK-DATA-002) y `docs/15` (tabla de fases corregida y actualización del 19/11).
-- Conteo verificado con `make test` (19/11/2026): API 137, web 81 y hooks 31 en verde.
+- Conteo verificado con `make test` (19/11/2026): API 137, web 82 y hooks 31 en verde; integración 6, funcionales en vivo 42 y E2E 73 también en verde.
+
+### Fixed
+- CI (`functional`): 4 E2E de la auditoría responsiva fallaban solo en Linux, donde la fuente de respaldo es DejaVu Sans (más ancha). Se reprodujo con la imagen de Playwright y DejaVu (evidencia en `docs/evidence/e2e-responsive-dejavu-*.log`).
+  - La tabla accesible del radar (`SkillRadarChart`) llevaba `sr-only` en la propia `<table>`, que ignora `width: 1px`. A 360 px desbordaba 29 px en el detalle de vacante. Ahora va dentro de un `div.sr-only` (TDD: `docs/evidence/tdd-radar-sr-only-*.log`).
+  - «Solo vacantes urgentes» se recortaba en el panel de filtros. El interruptor tiene menos separación y su texto pasa a `.95rem`.
+  - `responsive.spec.ts` ahora reporta los elementos `.sr-only` que desbordan e ignora lo que vive dentro de contenedores fijos. Antes señalaba la aurora del fondo animado, que no era la causa.
 
 ### Known issues
 - `deployment.md` no existe (el prompt se interrumpió); el hook `protect-files` bloquea escrituras en el scratchpad de la sesión.
-- El hook `pii-guard` marca como teléfono la tabla xref de los PDFs de prueba; `make test-int` de los nuevos adaptadores no se ejecutó (Docker apagado).
+- El hook `pii-guard` marca como teléfono la tabla xref de los PDFs de prueba.
 
 ## 0.1.0 · Núcleo MVP web (change `add-core-mvp`)
 

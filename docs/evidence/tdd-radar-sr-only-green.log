@@ -1,0 +1,9 @@
+
+ RUN  v4.1.12 /Users/guillermocortes/development/training/LIDR/project/nexotalent/apps/web
+
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  08:26:18
+   Duration  587ms (transform 45ms, setup 65ms, import 37ms, tests 106ms, environment 301ms)
+
