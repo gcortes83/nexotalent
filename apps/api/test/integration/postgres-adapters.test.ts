@@ -25,7 +25,7 @@ describe.skipIf(!url)('adaptadores PostgreSQL + pgvector', () => {
 
   beforeAll(async () => {
     const admin = postgres(url!, { max: 1, onnotice: () => {} });
-    await admin.unsafe('DROP SCHEMA IF EXISTS identity, jobs, candidates, applications, matching CASCADE; DROP TABLE IF EXISTS public.schema_migrations;');
+    await admin.unsafe('DROP SCHEMA IF EXISTS identity, jobs, candidates, applications, matching, notifications CASCADE; DROP TABLE IF EXISTS public.schema_migrations;');
     await admin.end();
     await migrate(url!, fileURLToPath(new URL('../../migrations', import.meta.url)), () => {});
     await seedDatabase(url!, buildSeed(clock.now()));
@@ -73,9 +73,16 @@ describe.skipIf(!url)('adaptadores PostgreSQL + pgvector', () => {
 
   it('la consulta ANN usa el índice HNSW sobre vacantes publicadas', async () => {
     const vec = (await pg.deps.jobs.get('job_backend_node'))!.embedding!;
-    await pg.sql`SET enable_seqscan = off`;
-    const plan = await pg.sql`EXPLAIN SELECT id FROM jobs.job WHERE status = 'published'
-      ORDER BY embedding <=> ${`[${vec.join(',')}]`}::vector LIMIT 5`;
+    // Con pocas filas el planner prefiere Bitmap Scan (job_prefilter_idx) + Sort sobre HNSW. Se desactivan esas
+    // alternativas con SET LOCAL dentro de una transacción para que apliquen a la MISMA conexión del EXPLAIN
+    // (un SET suelto puede caer en otra conexión del pool) y no contaminen las demás pruebas.
+    const plan = await pg.sql.begin(async (tx) => {
+      await tx`SET LOCAL enable_seqscan = off`;
+      await tx`SET LOCAL enable_bitmapscan = off`;
+      await tx`SET LOCAL enable_sort = off`;
+      return tx`EXPLAIN SELECT id FROM jobs.job WHERE status = 'published'
+        ORDER BY embedding <=> ${`[${vec.join(',')}]`}::vector LIMIT 5`;
+    });
     expect(plan.map((r) => Object.values(r)[0]).join('\n')).toContain('job_embedding_hnsw');
   });
 });
