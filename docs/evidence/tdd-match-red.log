@@ -1,0 +1,257 @@
+
+ RUN  v4.1.12 /Users/guillermocortes/development/training/LIDR/project/nexotalent/apps/api
+
+ ❯ |unit| test/unit/match-formula.test.ts (20 tests | 20 failed) 7ms
+     × cobertura total: todas las skills cubiertas da cobertura 1 y score alto 3ms
+     × skill obligatoria faltante: penaliza 0.10 y la lista en missingMustHaves 0ms
+     × candidata sin skills: score 0, radar del candidato en 0 y sin error 0ms
+     × solo cuentan las skills confirmadas 0ms
+     × respeta los pesos: medio nivel en una skill de peso 2 equivale a faltar una de peso 1 0ms
+     × un nivel superior al requerido no da cobertura mayor a 1 0ms
+     × la penalización por obligatorias se limita a 0.30 y el score nunca es negativo 0ms
+     × la similitud semántica se acota a [0, 1] 0ms
+     × candidato lead para vacante senior → seniorityFit 1 0ms
+     × candidato senior para vacante senior → seniorityFit 1 0ms
+     × candidato mid para vacante senior → seniorityFit 0.5 1ms
+     × candidato junior para vacante senior → seniorityFit 0 0ms
+     × seniority desconocida del candidato → 0.5 (neutral) 0ms
+     × modalidad no deseada reduce preferenceFit a 2/3 0ms
+     × vacante presencial en otro país y salario menor al esperado 0ms
+     × ignora atributos protegidos aunque lleguen en la entrada 0ms
+     × agrupa por categoría con promedio ponderado (0–5, 1 decimal) 0ms
+     × limita el radar a 8 ejes agrupando el resto en "Otros" 0ms
+     × separa fortalezas y brechas; obligatorias primero en brechas 0ms
+     × genera una explicación determinista con fortalezas, brechas y obligatorias faltantes 0ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 20 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |unit| test/unit/match-formula.test.ts > computeMatch · fórmula híbrida > cobertura total: todas las skills cubiertas da cobertura 1 y score alto
+Error: not implemented
+ ❯ computeMatch src/modules/matching/domain/match-formula.ts:10:9
+      8|   _semanticSimilarity: number,
+      9| ): MatchResult {
+     10|   throw new Error('not implemented');
+       |         ^
+     11| }
+     12|
+ ❯ test/unit/match-formula.test.ts:16:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/20]⎯
+
+ FAIL  |unit| test/unit/match-formula.test.ts > computeMatch · fórmula híbrida > skill obligatoria faltante: penaliza 0.10 y la lista en missingMustHaves
+Error: not implemented
+ ❯ computeMatch src/modules/matching/domain/match-formula.ts:10:9
+      8|   _semanticSimilarity: number,
+      9| ): MatchResult {
+     10|   throw new Error('not implemented');
+       |         ^
+     11| }
+     12|
+ ❯ test/unit/match-formula.test.ts:32:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/20]⎯
+
+ FAIL  |unit| test/unit/match-formula.test.ts > computeMatch · fórmula híbrida > candidata sin skills: score 0, radar del candidato en 0 y sin error
+Error: not implemented
+ ❯ computeMatch src/modules/matching/domain/match-formula.ts:10:9
+      8|   _semanticSimilarity: number,
+      9| ): MatchResult {
+     10|   throw new Error('not implemented');
+       |         ^
+     11| }
+     12|
+ ❯ test/unit/match-formula.test.ts:43:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/20]⎯
+
+ FAIL  |unit| test/unit/match-formula.test.ts > computeMatch · fórmula híbrida > solo cuentan las skills confirmadas
+Error: not implemented
+ ❯ computeMatch src/modules/matching/domain/match-formula.ts:10:9
+      8|   _semanticSimilarity: number,
+      9| ): MatchResult {
+     10|   throw new Error('not implemented');
+       |         ^
+     11| }
+     12|
+ ❯ test/unit/match-formula.test.ts:65:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/20]⎯
+
+ FAIL  |unit| test/unit/match-formula.test.ts > computeMatch · fórmula híbrida > respeta los pesos: medio nivel en una skill de peso 2 equivale a faltar una de peso 1
+Error: not implemented
+ ❯ computeMatch src/modules/matching/domain/match-formula.ts:10:9
+      8|   _semanticSimilarity: number,
+      9| ): MatchResult {
+     10|   throw new Error('not implemented');
+       |         ^
+     11| }
+     12|
+ ❯ test/unit/match-formula.test.ts:84:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/20]⎯
+
+ FAIL  |unit| test/unit/match-formula.test.ts > computeMatch · fórmula híbrida > un nivel superior al requerido no da cobertura mayor a 1
+Error: not implemented
+ ❯ computeMatch src/modules/matching/domain/match-formula.ts:10:9
+      8|   _semanticSimilarity: number,
+      9| ): MatchResult {
+     10|   throw new Error('not implemented');
+       |         ^
+     11| }
+     12|
+ ❯ test/unit/match-formula.test.ts:95:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/20]⎯
+
+ FAIL  |unit| test/unit/match-formula.test.ts > computeMatch · fórmula híbrida > la penalización por obligatorias se limita a 0.30 y el score nunca es negativo
+Error: not implemented
+ ❯ computeMatch src/modules/matching/domain/match-formula.ts:10:9
+      8|   _semanticSimilarity: number,
+      9| ): MatchResult {
+     10|   throw new Error('not implemented');
+       |         ^
+     11| }
+     12|
+ ❯ test/unit/match-formula.test.ts:113:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/20]⎯
+
+ FAIL  |unit| test/unit/match-formula.test.ts > computeMatch · fórmula híbrida > la similitud semántica se acota a [0, 1]
+Error: not implemented
+ ❯ computeMatch src/modules/matching/domain/match-formula.ts:10:9
+      8|   _semanticSimilarity: number,
+      9| ): MatchResult {
+     10|   throw new Error('not implemented');
+       |         ^
+     11| }
+     12|
+ ❯ test/unit/match-formula.test.ts:121:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/20]⎯
+
+ FAIL  |unit| test/unit/match-formula.test.ts > computeMatch · seniority y preferencias > candidato lead para vacante senior → seniorityFit 1
+ FAIL  |unit| test/unit/match-formula.test.ts > computeMatch · seniority y preferencias > candidato senior para vacante senior → seniorityFit 1
+ FAIL  |unit| test/unit/match-formula.test.ts > computeMatch · seniority y preferencias > candidato mid para vacante senior → seniorityFit 0.5
+ FAIL  |unit| test/unit/match-formula.test.ts > computeMatch · seniority y preferencias > candidato junior para vacante senior → seniorityFit 0
+Error: not implemented
+ ❯ computeMatch src/modules/matching/domain/match-formula.ts:10:9
+      8|   _semanticSimilarity: number,
+      9| ): MatchResult {
+     10|   throw new Error('not implemented');
+       |         ^
+     11| }
+     12|
+ ❯ test/unit/match-formula.test.ts:133:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/20]⎯
+
+ FAIL  |unit| test/unit/match-formula.test.ts > computeMatch · seniority y preferencias > seniority desconocida del candidato → 0.5 (neutral)
+Error: not implemented
+ ❯ computeMatch src/modules/matching/domain/match-formula.ts:10:9
+      8|   _semanticSimilarity: number,
+      9| ): MatchResult {
+     10|   throw new Error('not implemented');
+       |         ^
+     11| }
+     12|
+ ❯ test/unit/match-formula.test.ts:137:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/20]⎯
+
+ FAIL  |unit| test/unit/match-formula.test.ts > computeMatch · seniority y preferencias > modalidad no deseada reduce preferenceFit a 2/3
+Error: not implemented
+ ❯ computeMatch src/modules/matching/domain/match-formula.ts:10:9
+      8|   _semanticSimilarity: number,
+      9| ): MatchResult {
+     10|   throw new Error('not implemented');
+       |         ^
+     11| }
+     12|
+ ❯ test/unit/match-formula.test.ts:143:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/20]⎯
+
+ FAIL  |unit| test/unit/match-formula.test.ts > computeMatch · seniority y preferencias > vacante presencial en otro país y salario menor al esperado
+Error: not implemented
+ ❯ computeMatch src/modules/matching/domain/match-formula.ts:10:9
+      8|   _semanticSimilarity: number,
+      9| ): MatchResult {
+     10|   throw new Error('not implemented');
+       |         ^
+     11| }
+     12|
+ ❯ test/unit/match-formula.test.ts:151:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/20]⎯
+
+ FAIL  |unit| test/unit/match-formula.test.ts > computeMatch · ética > ignora atributos protegidos aunque lleguen en la entrada
+Error: not implemented
+ ❯ computeMatch src/modules/matching/domain/match-formula.ts:10:9
+      8|   _semanticSimilarity: number,
+      9| ): MatchResult {
+     10|   throw new Error('not implemented');
+       |         ^
+     11| }
+     12|
+ ❯ test/unit/match-formula.test.ts:168:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/20]⎯
+
+ FAIL  |unit| test/unit/match-formula.test.ts > computeMatch · radar, fortalezas, brechas y explicación > agrupa por categoría con promedio ponderado (0–5, 1 decimal)
+Error: not implemented
+ ❯ computeMatch src/modules/matching/domain/match-formula.ts:10:9
+      8|   _semanticSimilarity: number,
+      9| ): MatchResult {
+     10|   throw new Error('not implemented');
+       |         ^
+     11| }
+     12|
+ ❯ test/unit/match-formula.test.ts:183:23
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/20]⎯
+
+ FAIL  |unit| test/unit/match-formula.test.ts > computeMatch · radar, fortalezas, brechas y explicación > limita el radar a 8 ejes agrupando el resto en "Otros"
+Error: not implemented
+ ❯ computeMatch src/modules/matching/domain/match-formula.ts:10:9
+      8|   _semanticSimilarity: number,
+      9| ): MatchResult {
+     10|   throw new Error('not implemented');
+       |         ^
+     11| }
+     12|
+ ❯ test/unit/match-formula.test.ts:195:23
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/20]⎯
+
+ FAIL  |unit| test/unit/match-formula.test.ts > computeMatch · radar, fortalezas, brechas y explicación > separa fortalezas y brechas; obligatorias primero en brechas
+Error: not implemented
+ ❯ computeMatch src/modules/matching/domain/match-formula.ts:10:9
+      8|   _semanticSimilarity: number,
+      9| ): MatchResult {
+     10|   throw new Error('not implemented');
+       |         ^
+     11| }
+     12|
+ ❯ test/unit/match-formula.test.ts:206:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/20]⎯
+
+ FAIL  |unit| test/unit/match-formula.test.ts > computeMatch · radar, fortalezas, brechas y explicación > genera una explicación determinista con fortalezas, brechas y obligatorias faltantes
+Error: not implemented
+ ❯ computeMatch src/modules/matching/domain/match-formula.ts:10:9
+      8|   _semanticSimilarity: number,
+      9| ): MatchResult {
+     10|   throw new Error('not implemented');
+       |         ^
+     11| }
+     12|
+ ❯ test/unit/match-formula.test.ts:218:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/20]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  20 failed (20)
+   Start at  05:40:29
+   Duration  165ms (transform 24ms, setup 0ms, import 33ms, tests 7ms, environment 0ms)
+

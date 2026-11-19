@@ -21,6 +21,17 @@ Formato: *Como [rol] quiero [acción] para [beneficio]*, criterios de aceptació
 | HU-13 | Integraciones | Conectar SAP SuccessFactors y sincronizar estatus | Could | 13 |
 | HU-14 | Admin | Administrar usuarios, vacantes y candidatos | Must | 8 |
 | HU-15 | Copiloto | Preguntar en lenguaje natural sobre mis candidatos | Could | 8 |
+| HU-16 | Cuentas | Registrarme como candidata o empleador y entrar con correo y contraseña | Must | 5 |
+| HU-17 | Vacantes | Crear, editar, publicar y cerrar mis vacantes (soft delete) | Must | 5 |
+| HU-18 | Notificaciones | Enterarme en la app y por email cuando me seleccionan o se cierra la vacante | Must | 5 |
+| HU-19 | Catálogo | Buscar vacantes con filtros facetados y ver las urgentes | Must | 5 |
+| HU-20 | Soft skills | Comparar mis soft skills con las de la vacante en un radar propio | Should | 3 |
+| HU-21 | Idioma | Usar la plataforma en español o inglés desde cualquier dispositivo | Should | 5 |
+
+> **Estado en el MVP web (19/11/2026).** Implementadas: HU-01, HU-02 y HU-04 (change `add-core-mvp`); HU-16 a HU-21, HU-03
+> (CSV/JSON/PDF sin preview editable) y HU-11 simplificada (un solo estado `closed`, sin motivo) (change
+> `add-accounts-jobs-notifications`). HU-08 solo en el dashboard (sin envío de recordatorios). El resto queda para v2;
+> las apps móviles siguen PENDIENTES.
 
 ## 2. Historias detalladas
 
@@ -149,3 +160,73 @@ Escenario: En pausa
   Cuando la pongo "En pausa" con motivo
   Entonces no acepta nuevas postulaciones y sus días de vigencia se congelan
 ```
+
+## 3. Historias agregadas en el MVP web (change `add-accounts-jobs-notifications`, 17/11/2026)
+
+### HU-16 · Registro y login con contraseña
+**Como** candidata o empleador **quiero** crear mi cuenta y entrar con correo y contraseña **para** usar la plataforma sin cuentas de demo.
+```gherkin
+Escenario: Registro de empleador
+  Dado que no tengo cuenta
+  Cuando me registro como empleador con el nombre de mi empresa, un correo nuevo y una contraseña válida
+  Entonces se crea mi organización, quedo como administrador y entro a mi dashboard
+Escenario: Credenciales inválidas
+  Cuando entro en la pestaña equivocada o con una contraseña incorrecta
+  Entonces veo el mismo mensaje de credenciales inválidas, sin saber si el correo existe
+```
+
+### HU-17 · Gestionar e importar vacantes
+**Como** reclutador **quiero** crear, editar, publicar, cerrar e importar vacantes **para** mantener mi catálogo al día.
+```gherkin
+Escenario: Cerrar vacante con postulantes
+  Dado una vacante publicada con 2 postulaciones activas
+  Cuando la cierro y confirmo
+  Entonces su estatus es "closed", deja de aparecer en el catálogo y los 2 postulantes reciben un aviso
+Escenario: Importar CSV con una fila inválida
+  Cuando importo un CSV de 3 vacantes y una tiene una moneda distinta de USD
+  Entonces se importan 2 en borrador y el reporte muestra el error de la tercera fila
+```
+
+### HU-18 · Notificaciones de selección y cierre
+**Como** candidata **quiero** enterarme cuando me preseleccionan o se cierra una vacante **para** no quedarme esperando (cero ghosting).
+```gherkin
+Escenario: Preselección
+  Cuando el reclutador me mueve a "Preseleccionado"
+  Entonces veo un toast en menos de 10 segundos, la marca "Seleccionado" en mis vacantes aplicadas y recibo un email
+```
+
+### HU-19 · Catálogo con filtros
+**Como** candidata **quiero** filtrar vacantes por modalidad, seniority, país, salario en USD, skills y urgencia **para** encontrar rápido las que me interesan.
+```gherkin
+Escenario: Compartir búsqueda
+  Dado que filtro por "remoto" y "solo urgentes"
+  Cuando copio la URL y la abro en otro navegador
+  Entonces veo los mismos resultados y los chips de filtros activos
+Escenario: Postular sin sesión
+  Dado que no he iniciado sesión
+  Cuando abro una vacante y elijo crear cuenta de candidata
+  Entonces al terminar el registro regreso a la vacante y puedo postular
+```
+
+### HU-20 · Radar de soft skills
+**Como** candidata **quiero** ver por separado el radar de skills técnicas y el de soft skills **para** entender ambas brechas.
+```gherkin
+Escenario: Vacante con soft skills
+  Dado que la vacante pide "Comunicación" y "Trabajo en equipo"
+  Y confirmé "Comunicación" en nivel 4
+  Cuando abro el detalle
+  Entonces veo un segundo radar en verde con un eje por soft skill y mi nivel confirmado
+```
+
+### HU-21 · Idioma y dispositivo
+**Como** usuaria **quiero** cambiar entre español e inglés y usar la plataforma en el celular **para** trabajar en mi idioma desde cualquier lugar.
+```gherkin
+Escenario: Cambiar a inglés
+  Cuando elijo "EN" en el pie de página
+  Entonces toda la interfaz cambia a inglés y se conserva al volver
+Escenario: Celular
+  Dado una pantalla de 360 px
+  Cuando navego por cualquier página
+  Entonces no hay scroll horizontal y el menú se pliega
+```
+

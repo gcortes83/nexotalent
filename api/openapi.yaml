@@ -1,0 +1,861 @@
+openapi: 3.1.0
+info:
+  title: NexoTalent AI · API del núcleo MVP
+  version: 0.2.0
+  description: |
+    Contrato del núcleo MVP (change `add-core-mvp`). Errores en RFC 9457 (`application/problem+json`).
+    Autenticación Bearer JWT: `POST /v1/auth/login` (correo + contraseña) o `POST /v1/auth/demo-login` (solo DEMO_AUTH).
+    Change `add-accounts-jobs-notifications`: registro, gestión e importación de vacantes y notificaciones. Cognito en v2.
+  license:
+    name: Propietaria
+    identifier: LicenseRef-Proprietary
+servers:
+  - url: http://localhost:4000
+    description: Local
+security:
+  - bearerAuth: []
+tags:
+  - name: Auth
+  - name: Jobs
+  - name: Candidate
+  - name: Applications
+  - name: Employer
+  - name: Notifications
+paths:
+  /health:
+    get:
+      operationId: health
+      summary: Estado del servicio
+      tags: [Auth]
+      security: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { type: object, properties: { status: { type: string, const: ok } } }
+  /v1/auth/demo-login:
+    post:
+      operationId: demoLogin
+      summary: Login de demo sin contraseña (solo con DEMO_AUTH=true)
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties: { email: { type: string, format: email, examples: [candidata@example.com] } }
+      responses:
+        '200':
+          description: Token emitido
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [token, user]
+                properties: { token: { type: string }, user: { $ref: '#/components/schemas/User' } }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /v1/me:
+    get:
+      operationId: getMe
+      summary: Usuario autenticado
+      tags: [Auth]
+      responses:
+        '200':
+          description: Usuario
+          content: { application/json: { schema: { $ref: '#/components/schemas/User' } } }
+        '401': { $ref: '#/components/responses/Problem' }
+  /v1/skills:
+    get:
+      operationId: listSkills
+      summary: Taxonomía de skills
+      tags: [Jobs]
+      security: []
+      responses:
+        '200':
+          description: Skills
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Skill' } }
+  /v1/jobs:
+    get:
+      operationId: listJobs
+      summary: Búsqueda de vacantes publicadas con filtros, orden, paginación y facetas
+      description: |
+        Las listas se envían como CSV (`?modality=remote,hybrid`). Todas las palabras de `q` deben aparecer
+        (sin distinguir acentos ni mayúsculas) en título, descripción, empresa, ciudad o skills. Las facetas cuentan
+        vacantes por opción excluyendo el propio filtro del grupo.
+      tags: [Jobs]
+      security: []
+      parameters:
+        - { in: query, name: q, schema: { type: string, maxLength: 100 } }
+        - { in: query, name: modality, schema: { type: string, example: 'remote,hybrid' }, description: 'CSV de onsite|hybrid|remote' }
+        - { in: query, name: seniority, schema: { type: string, example: 'mid,senior' }, description: 'CSV de junior|mid|senior|lead' }
+        - { in: query, name: country, schema: { type: string, example: 'MX,CO' }, description: 'CSV de códigos ISO de 2 letras' }
+        - { in: query, name: skills, schema: { type: string, example: 'React,TypeScript' }, description: 'La vacante debe pedir TODAS' }
+        - { in: query, name: minSalary, schema: { type: integer, minimum: 0 }, description: 'USD mensuales: salario máximo ofrecido ≥ este valor' }
+        - { in: query, name: urgent, schema: { type: string, enum: ['true', 'false'] }, description: 'Solo vacantes urgentes («hot»)' }
+        - { in: query, name: sort, schema: { type: string, enum: [recent, salary_desc, salary_asc, positions], default: recent } }
+        - { in: query, name: page, schema: { type: integer, minimum: 1, default: 1 } }
+        - { in: query, name: pageSize, schema: { type: integer, minimum: 1, maximum: 50, default: 20 } }
+      responses:
+        '200':
+          description: Vacantes
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, total, page, pageSize, facets]
+                properties:
+                  items: { type: array, items: { $ref: '#/components/schemas/Job' } }
+                  total: { type: integer }
+                  page: { type: integer }
+                  pageSize: { type: integer }
+                  facets:
+                    type: object
+                    properties:
+                      modality: { type: object, additionalProperties: { type: integer } }
+                      seniority: { type: object, additionalProperties: { type: integer } }
+                      country: { type: object, additionalProperties: { type: integer } }
+                      skills: { type: array, items: { type: object, properties: { name: { type: string }, count: { type: integer } } } }
+                      salary: { type: object, properties: { min: { type: [integer, 'null'] }, max: { type: [integer, 'null'] } } }
+                      urgent: { type: integer, description: Vacantes urgentes con el resto de filtros }
+        '422': { $ref: '#/components/responses/Problem' }
+  /v1/jobs/{jobId}:
+    get:
+      operationId: getJob
+      summary: Detalle de vacante publicada con posiciones disponibles y postulantes
+      tags: [Jobs]
+      security: []
+      parameters: [{ $ref: '#/components/parameters/JobId' }]
+      responses:
+        '200':
+          description: Vacante
+          content: { application/json: { schema: { $ref: '#/components/schemas/Job' } } }
+        '404': { $ref: '#/components/responses/Problem' }
+  /v1/jobs/{jobId}/match:
+    get:
+      operationId: getJobMatch
+      summary: Score, radar, fortalezas y brechas del candidato autenticado (TK-BE-012)
+      tags: [Candidate]
+      parameters:
+        - { $ref: '#/components/parameters/JobId' }
+        - { in: header, name: If-None-Match, schema: { type: string } }
+      responses:
+        '200':
+          description: Match
+          headers: { ETag: { schema: { type: string } } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/JobMatch' }
+              example:
+                candidateId: cand_ana
+                jobId: job_backend_node
+                score: 0.8125
+                scorePercent: 81
+                factors: { skillCoverage: 0.875, semanticSimilarity: 0.71, seniorityFit: 1, preferenceFit: 1, mustHavePenalty: 0 }
+                missingMustHaves: []
+                radar: [{ axis: Lenguajes, required: 4, candidate: 5 }, { axis: Cloud, required: 3, candidate: 2 }]
+                strengths: [TypeScript, Node.js]
+                gaps: [{ skill: AWS, required: 3, candidate: 2, mustHave: false }]
+                explanation: 'Cumples 4 de 6 skills requeridas. Fortalezas: TypeScript, Node.js.'
+                modelVersion: match-v1
+                computedAt: '2026-11-17T12:00:00.000Z'
+        '304': { description: Sin cambios }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /v1/jobs/{jobId}/applications:
+    post:
+      operationId: applyToJob
+      summary: Postular a una vacante publicada
+      tags: [Candidate]
+      parameters: [{ $ref: '#/components/parameters/JobId' }]
+      responses:
+        '201':
+          description: Postulación creada
+          headers: { ETag: { schema: { type: string } } }
+          content: { application/json: { schema: { $ref: '#/components/schemas/Application' } } }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+    get:
+      operationId: listJobApplications
+      summary: Candidatos de una vacante de mi organización, ordenados por match
+      tags: [Employer]
+      parameters: [{ $ref: '#/components/parameters/JobId' }]
+      responses:
+        '200':
+          description: Postulaciones
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties: { items: { type: array, items: { $ref: '#/components/schemas/JobApplicant' } } }
+        '403': { $ref: '#/components/responses/Problem' }
+        '404': { $ref: '#/components/responses/Problem' }
+  /v1/candidates/me:
+    get:
+      operationId: getMyProfile
+      summary: Perfil del candidato (sin atributos protegidos)
+      tags: [Candidate]
+      responses:
+        '200':
+          description: Perfil
+          content: { application/json: { schema: { $ref: '#/components/schemas/CandidateProfile' } } }
+        '404': { $ref: '#/components/responses/Problem' }
+    put:
+      operationId: updateMyProfile
+      summary: Actualiza datos profesionales (recalcula embedding e invalida el match)
+      tags: [Candidate]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/ProfileInput' } } }
+      responses:
+        '200':
+          description: Perfil actualizado
+          content: { application/json: { schema: { $ref: '#/components/schemas/CandidateProfile' } } }
+        '422': { $ref: '#/components/responses/Problem' }
+  /v1/candidates/me/resume/file:
+    post:
+      operationId: uploadResumeFile
+      summary: Sube el CV como archivo (PDF con texto, TXT o MD, máx. 5 MB); la IA propone skills sin confirmar
+      tags: [Candidate]
+      requestBody:
+        required: true
+        content:
+          application/pdf: { schema: { type: string, format: binary } }
+          text/plain: { schema: { type: string } }
+          text/markdown: { schema: { type: string } }
+      responses:
+        '200': { description: Skills propuestas y confirmadas }
+        '422': { $ref: '#/components/responses/Problem' }
+  /v1/candidates/me/resume:
+    post:
+      operationId: submitResume
+      summary: Envía el texto del CV; la IA propone skills sin confirmar
+      tags: [Candidate]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties: { text: { type: string, minLength: 30, maxLength: 30000 } }
+      responses:
+        '200':
+          description: Skills propuestas
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [proposedSkills, confirmedSkills]
+                properties:
+                  proposedSkills: { type: array, items: { $ref: '#/components/schemas/CandidateSkill' } }
+                  confirmedSkills: { type: array, items: { $ref: '#/components/schemas/CandidateSkill' } }
+        '422': { $ref: '#/components/responses/Problem' }
+  /v1/candidates/me/skills:
+    put:
+      operationId: confirmSkills
+      summary: Reemplaza la lista de skills confirmadas (solo estas cuentan para el match)
+      tags: [Candidate]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [skills]
+              properties:
+                skills:
+                  type: array
+                  maxItems: 60
+                  items:
+                    type: object
+                    required: [skillId, level]
+                    properties:
+                      skillId: { type: string }
+                      level: { type: integer, minimum: 1, maximum: 5 }
+      responses:
+        '200':
+          description: Skills confirmadas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: { confirmedSkills: { type: array, items: { $ref: '#/components/schemas/CandidateSkill' } } }
+        '422': { $ref: '#/components/responses/Problem' }
+  /v1/bff/candidate/dashboard:
+    get:
+      operationId: getCandidateDashboard
+      summary: Postulaciones con stepper y vacantes recomendadas en una llamada (HU-02, TK-BE-015)
+      tags: [Candidate]
+      responses:
+        '200':
+          description: Dashboard
+          content: { application/json: { schema: { $ref: '#/components/schemas/CandidateDashboard' } } }
+        '401': { $ref: '#/components/responses/Problem' }
+        '403': { $ref: '#/components/responses/Problem' }
+  /v1/applications/{id}/withdraw:
+    post:
+      operationId: withdrawApplication
+      summary: La candidata retira su postulación
+      tags: [Candidate]
+      parameters: [{ $ref: '#/components/parameters/ApplicationId' }]
+      responses:
+        '200':
+          description: Retirada
+          content: { application/json: { schema: { $ref: '#/components/schemas/Application' } } }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /v1/applications/{id}/status:
+    patch:
+      operationId: changeApplicationStatus
+      summary: El reclutador cambia el estatus (concurrencia optimista con If-Match)
+      tags: [Employer]
+      parameters:
+        - { $ref: '#/components/parameters/ApplicationId' }
+        - in: header
+          name: If-Match
+          required: true
+          description: Versión actual de la postulación, p. ej. `"3"`
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { $ref: '#/components/schemas/RecruiterSettableStatus' }
+                reason: { type: [string, 'null'], maxLength: 500 }
+            example: { status: shortlisted, reason: null }
+      responses:
+        '200':
+          description: Estatus actualizado
+          headers: { ETag: { schema: { type: string } } }
+          content: { application/json: { schema: { $ref: '#/components/schemas/Application' } } }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '412': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+        '428': { $ref: '#/components/responses/Problem' }
+  /v1/bff/employer/dashboard:
+    get:
+      operationId: getEmployerDashboard
+      summary: Vacantes de mi organización y postulaciones estancadas (3 y 5 días)
+      tags: [Employer]
+      responses:
+        '200':
+          description: Dashboard
+          content: { application/json: { schema: { $ref: '#/components/schemas/EmployerDashboard' } } }
+        '403': { $ref: '#/components/responses/Problem' }
+  /v1/auth/register/candidate:
+    post:
+      operationId: registerCandidate
+      summary: Registro de candidato (crea usuario y perfil vacío)
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fullName, email, password, acceptPrivacy]
+              properties:
+                fullName: { type: string, minLength: 2, maxLength: 120 }
+                email: { type: string, format: email }
+                password: { type: string, minLength: 8, description: 'Al menos una letra y un número' }
+                headline: { type: [string, 'null'], maxLength: 160 }
+                country: { type: [string, 'null'], minLength: 2, maxLength: 2 }
+                acceptPrivacy: { type: boolean, const: true }
+      responses:
+        '201': { description: Cuenta creada, content: { application/json: { schema: { $ref: '#/components/schemas/AuthResponse' } } } }
+        '409': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /v1/auth/register/employer:
+    post:
+      operationId: registerEmployer
+      summary: Registro de empleador (crea organización y usuario employer_admin)
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [companyName, fullName, email, password, acceptPrivacy]
+              properties:
+                companyName: { type: string, minLength: 2, maxLength: 160 }
+                fullName: { type: string, minLength: 2, maxLength: 120 }
+                email: { type: string, format: email }
+                password: { type: string, minLength: 8 }
+                acceptPrivacy: { type: boolean, const: true }
+      responses:
+        '201': { description: Cuenta creada, content: { application/json: { schema: { $ref: '#/components/schemas/AuthResponse' } } } }
+        '409': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /v1/auth/login:
+    post:
+      operationId: login
+      summary: Login con correo y contraseña por tipo de cuenta (mismo 401 para cualquier fallo)
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, kind]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+                kind: { type: string, enum: [candidate, employer] }
+      responses:
+        '200': { description: Sesión, content: { application/json: { schema: { $ref: '#/components/schemas/AuthResponse' } } } }
+        '401': { $ref: '#/components/responses/Problem' }
+  /v1/employer/jobs:
+    get:
+      operationId: listEmployerJobs
+      summary: Todas las vacantes de mi organización (incluye borradores y cerradas)
+      tags: [Employer]
+      responses:
+        '200':
+          description: Vacantes
+          content: { application/json: { schema: { type: object, properties: { items: { type: array, items: { $ref: '#/components/schemas/EmployerJob' } } } } } }
+        '403': { $ref: '#/components/responses/Problem' }
+    post:
+      operationId: createJob
+      summary: Crea una vacante en borrador o publicada (pago simulado)
+      tags: [Employer]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/JobInput'
+                - type: object
+                  properties: { publish: { type: boolean, default: false } }
+      responses:
+        '201': { description: Creada, content: { application/json: { schema: { $ref: '#/components/schemas/EmployerJob' } } } }
+        '409': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /v1/employer/jobs/{jobId}:
+    parameters: [{ $ref: '#/components/parameters/JobId' }]
+    get:
+      operationId: getEmployerJob
+      summary: Detalle de una vacante propia (cualquier estado)
+      tags: [Employer]
+      responses:
+        '200': { description: Vacante, content: { application/json: { schema: { $ref: '#/components/schemas/EmployerJob' } } } }
+        '404': { $ref: '#/components/responses/Problem' }
+    put:
+      operationId: updateJob
+      summary: Edita una vacante en borrador, publicada o en pausa
+      tags: [Employer]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/JobInput' } } }
+      responses:
+        '200': { description: Actualizada, content: { application/json: { schema: { $ref: '#/components/schemas/EmployerJob' } } } }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /v1/employer/jobs/{jobId}/publish:
+    parameters: [{ $ref: '#/components/parameters/JobId' }]
+    post:
+      operationId: publishJob
+      summary: Publica un borrador (requiere al menos una skill)
+      tags: [Employer]
+      responses:
+        '200': { description: Publicada, content: { application/json: { schema: { $ref: '#/components/schemas/EmployerJob' } } } }
+        '409': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+  /v1/employer/jobs/{jobId}/close:
+    parameters: [{ $ref: '#/components/parameters/JobId' }]
+    post:
+      operationId: closeJob
+      summary: Cierra la vacante (soft delete) y notifica in-app y por email a los candidatos con postulación activa
+      tags: [Employer]
+      responses:
+        '200':
+          description: Cerrada
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EmployerJob'
+                  - type: object
+                    properties: { notifiedCandidates: { type: integer, minimum: 0 } }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+  /v1/employer/jobs/imports:
+    post:
+      operationId: importJobs
+      summary: Importa 1..500 vacantes desde CSV, JSON (CanonicalJob) o PDF; upsert por externalId
+      tags: [Employer]
+      parameters:
+        - { in: query, name: format, required: true, schema: { type: string, enum: [csv, json, pdf] } }
+        - { in: query, name: publish, schema: { type: string, enum: ['true', 'false'], default: 'false' }, description: 'PDF siempre queda en borrador' }
+      requestBody:
+        required: true
+        content:
+          text/csv: { schema: { type: string } }
+          application/json: { schema: {} }
+          application/pdf: { schema: { type: string, format: binary } }
+      responses:
+        '200': { description: Reporte, content: { application/json: { schema: { $ref: '#/components/schemas/ImportReport' } } } }
+        '422': { $ref: '#/components/responses/Problem' }
+  /v1/notifications:
+    get:
+      operationId: listNotifications
+      summary: Notificaciones in-app del usuario (más recientes primero)
+      tags: [Notifications]
+      parameters:
+        - { in: query, name: unread, schema: { type: string, enum: ['true', 'false'] } }
+      responses:
+        '200':
+          description: Notificaciones
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items: { type: array, items: { $ref: '#/components/schemas/Notification' } }
+                  unreadCount: { type: integer }
+        '401': { $ref: '#/components/responses/Problem' }
+  /v1/notifications/{id}/read:
+    parameters: [{ $ref: '#/components/parameters/ApplicationId' }]
+    post:
+      operationId: markNotificationRead
+      summary: Marca una notificación propia como leída
+      tags: [Notifications]
+      responses:
+        '204': { description: Leída }
+        '404': { $ref: '#/components/responses/Problem' }
+  /v1/notifications/read-all:
+    post:
+      operationId: markAllNotificationsRead
+      summary: Marca todas mis notificaciones como leídas
+      tags: [Notifications]
+      responses:
+        '204': { description: Leídas }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    JobId: { in: path, name: jobId, required: true, schema: { type: string, maxLength: 64 } }
+    ApplicationId: { in: path, name: id, required: true, schema: { type: string, maxLength: 64 } }
+  responses:
+    Problem:
+      description: Error RFC 9457
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+  schemas:
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type: { type: string, format: uri }
+        title: { type: string }
+        status: { type: integer }
+        instance: { type: string }
+        details: {}
+        errors: { type: array, items: { type: object, properties: { path: { type: string }, message: { type: string } } } }
+    User:
+      type: object
+      required: [id, email, fullName, role, organizationId]
+      properties:
+        id: { type: string }
+        email: { type: string, format: email }
+        fullName: { type: string }
+        role: { type: string, enum: [candidate, recruiter, employer_admin, platform_admin] }
+        organizationId: { type: [string, 'null'] }
+    Skill:
+      type: object
+      required: [id, name, category, aliases]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        category: { type: string }
+        aliases: { type: array, items: { type: string } }
+    Job:
+      type: object
+      required: [id, title, status, modality, positionsTotal, positionsAvailable, applicantsCount, skills]
+      properties:
+        id: { type: string }
+        organizationName: { type: string }
+        title: { type: string, maxLength: 160 }
+        description: { type: string }
+        status: { type: string, enum: [draft, pending_payment, published, on_hold, filled, cancelled, expired, closed] }
+        seniority: { type: string, enum: [junior, mid, senior, lead] }
+        modality: { type: string, enum: [onsite, hybrid, remote] }
+        country: { type: string }
+        city: { type: [string, 'null'] }
+        salary:
+          oneOf:
+            - type: 'null'
+            - type: object
+              properties: { min: { type: [number, 'null'] }, max: { type: number }, currency: { type: string, enum: [USD] } }
+              description: Salario mensual en USD
+        positionsTotal: { type: integer, minimum: 1 }
+        positionsAvailable: { type: integer, minimum: 0 }
+        applicantsCount: { type: integer, minimum: 0 }
+        skills:
+          type: array
+          items:
+            type: object
+            properties:
+              name: { type: string }
+              category: { type: string }
+              level: { type: integer, minimum: 1, maximum: 5 }
+              mustHave: { type: boolean }
+        publishedAt: { type: [string, 'null'], format: date-time }
+        closedAt: { type: [string, 'null'], format: date-time }
+        urgent: { type: boolean, description: 'Contratación urgente («hot»), destacada con 🔥' }
+    JobMatch:
+      type: object
+      required: [candidateId, jobId, score, scorePercent, factors, missingMustHaves, radar, strengths, gaps, explanation, modelVersion]
+      properties:
+        candidateId: { type: string }
+        jobId: { type: string }
+        score: { type: number, minimum: 0, maximum: 1 }
+        scorePercent: { type: integer, minimum: 0, maximum: 100 }
+        factors:
+          type: object
+          properties:
+            skillCoverage: { type: number }
+            semanticSimilarity: { type: number }
+            seniorityFit: { type: number }
+            preferenceFit: { type: number }
+            mustHavePenalty: { type: number }
+        missingMustHaves: { type: array, items: { type: string } }
+        radar:
+          type: array
+          maxItems: 8
+          items:
+            type: object
+            properties: { axis: { type: string }, required: { type: number }, candidate: { type: number } }
+        strengths: { type: array, items: { type: string } }
+        gaps:
+          type: array
+          items:
+            type: object
+            properties: { skill: { type: string }, required: { type: number }, candidate: { type: number }, mustHave: { type: boolean } }
+        explanation: { type: string }
+        modelVersion: { type: string }
+        computedAt: { type: string, format: date-time }
+    CandidateSkill:
+      type: object
+      required: [skillId, name, category, level, confirmed, source]
+      properties:
+        skillId: { type: string }
+        name: { type: string }
+        category: { type: string }
+        level: { type: integer, minimum: 0, maximum: 5 }
+        confirmed: { type: boolean }
+        source: { type: string, enum: [declared, extracted] }
+        evidence: { type: [string, 'null'] }
+    CandidateProfile:
+      type: object
+      properties:
+        id: { type: string }
+        fullName: { type: string }
+        headline: { type: [string, 'null'] }
+        seniority: { type: [string, 'null'] }
+        skills: { type: array, items: { $ref: '#/components/schemas/CandidateSkill' } }
+        hasResume: { type: boolean }
+    ApplicationStatus:
+      type: string
+      enum: [submitted, in_review, shortlisted, interview_scheduled, interview_done, offer, hired, rejected, withdrawn]
+    RecruiterSettableStatus:
+      type: string
+      description: Estados que el reclutador puede fijar. `withdrawn` solo lo fija la candidata (POST /withdraw) y `submitted` es el inicial.
+      enum: [in_review, shortlisted, interview_scheduled, interview_done, offer, hired, rejected]
+    Application:
+      type: object
+      required: [id, jobId, candidateId, status, version]
+      properties:
+        id: { type: string }
+        jobId: { type: string }
+        candidateId: { type: string }
+        status: { $ref: '#/components/schemas/ApplicationStatus' }
+        version: { type: integer, minimum: 1 }
+        matchScore: { type: [number, 'null'] }
+        createdAt: { type: string, format: date-time }
+        statusChangedAt: { type: string, format: date-time }
+    Stepper:
+      type: object
+      properties:
+        steps:
+          type: array
+          items:
+            type: object
+            properties:
+              key: { $ref: '#/components/schemas/ApplicationStatus' }
+              label: { type: string }
+              state: { type: string, enum: [done, current, upcoming] }
+              date: { type: [string, 'null'], format: date-time }
+        current: { $ref: '#/components/schemas/ApplicationStatus' }
+        terminal: { type: [string, 'null'], enum: [rejected, withdrawn, hired, null] }
+        terminalLabel: { type: [string, 'null'] }
+    CandidateDashboard:
+      type: object
+      properties:
+        candidate:
+          type: object
+          properties: { id: { type: string }, fullName: { type: string }, hasConfirmedSkills: { type: boolean } }
+        summary:
+          type: object
+          properties: { total: { type: integer }, active: { type: integer } }
+        applications:
+          type: array
+          items:
+            allOf:
+              - $ref: '#/components/schemas/Application'
+              - type: object
+                properties:
+                  job:
+                    type: [object, 'null']
+                    properties: { id: { type: string }, title: { type: string }, organizationName: { type: string }, status: { type: string } }
+                  stepper: { $ref: '#/components/schemas/Stepper' }
+        recommendedJobs:
+          type: array
+          maxItems: 3
+          items:
+            allOf:
+              - $ref: '#/components/schemas/Job'
+              - type: object
+                properties: { matchScore: { type: number }, scorePercent: { type: integer } }
+    JobApplicant:
+      allOf:
+        - $ref: '#/components/schemas/Application'
+        - type: object
+          properties:
+            candidate:
+              type: [object, 'null']
+              properties: { id: { type: string }, fullName: { type: string }, headline: { type: [string, 'null'] }, seniority: { type: [string, 'null'] } }
+            staleDays: { type: integer, minimum: 0 }
+    EmployerDashboard:
+      type: object
+      properties:
+        jobs:
+          type: array
+          items:
+            allOf:
+              - $ref: '#/components/schemas/Job'
+              - type: object
+                properties: { pipeline: { type: object, additionalProperties: { type: integer } } }
+        staleApplications:
+          type: array
+          items:
+            type: object
+            properties:
+              applicationId: { type: string }
+              jobId: { type: string }
+              jobTitle: { type: [string, 'null'] }
+              status: { $ref: '#/components/schemas/ApplicationStatus' }
+              version: { type: integer }
+              staleDays: { type: integer, minimum: 3 }
+              level: { type: string, enum: [warning, escalated] }
+    AuthResponse:
+      type: object
+      required: [token, user]
+      properties:
+        token: { type: string }
+        user: { $ref: '#/components/schemas/User' }
+    ProfileInput:
+      type: object
+      required: [fullName]
+      properties:
+        fullName: { type: string, minLength: 2, maxLength: 120 }
+        headline: { type: [string, 'null'], maxLength: 160 }
+        seniority: { type: [string, 'null'], enum: [junior, mid, senior, lead, null] }
+        country: { type: [string, 'null'] }
+        preferredModalities: { type: array, items: { type: string, enum: [onsite, hybrid, remote] } }
+        salaryExpectation: { type: [integer, 'null'], minimum: 0 }
+    JobInput:
+      type: object
+      required: [title, description, seniority, modality, country, positionsTotal]
+      properties:
+        externalId: { type: [string, 'null'], maxLength: 120 }
+        title: { type: string, minLength: 3, maxLength: 160 }
+        description: { type: string, minLength: 10 }
+        seniority: { type: string, enum: [junior, mid, senior, lead] }
+        modality: { type: string, enum: [onsite, hybrid, remote] }
+        country: { type: string, minLength: 2, maxLength: 2 }
+        city: { type: [string, 'null'] }
+        salaryMin: { type: [integer, 'null'], minimum: 0 }
+        salaryMax: { type: [integer, 'null'], minimum: 0 }
+        currency: { type: string, enum: [USD], default: USD, description: 'Moneda única: salario mensual en dólares estadounidenses' }
+        positionsTotal: { type: integer, minimum: 1 }
+        urgent: { type: boolean, default: false }
+        softSkills:
+          type: array
+          maxItems: 10
+          description: Soft skills opcionales (categoría «Soft skills» de la taxonomía); se guardan con las skills
+          items:
+            type: object
+            required: [name, level]
+            properties:
+              name: { type: string }
+              level: { type: integer, minimum: 1, maximum: 5 }
+        skills:
+          type: array
+          maxItems: 30
+          items:
+            type: object
+            required: [name, level]
+            properties:
+              name: { type: string, description: Nombre o alias en la taxonomía }
+              level: { type: integer, minimum: 1, maximum: 5 }
+              mustHave: { type: boolean, default: false }
+    EmployerJob:
+      allOf:
+        - $ref: '#/components/schemas/Job'
+        - type: object
+          properties:
+            externalId: { type: [string, 'null'] }
+            sourceType: { type: string, enum: [manual, seed, csv, json, pdf] }
+            updatedAt: { type: string, format: date-time }
+    ImportReport:
+      type: object
+      properties:
+        format: { type: string, enum: [csv, json, pdf] }
+        created: { type: integer }
+        updated: { type: integer }
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              row: { type: integer }
+              jobId: { type: string }
+              title: { type: string }
+              result: { type: string, enum: [created, updated] }
+              status: { type: string }
+              warnings: { type: array, items: { type: string } }
+        errors:
+          type: array
+          items: { type: object, properties: { row: { type: integer }, message: { type: string } } }
+    Notification:
+      type: object
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [selected, status_changed, job_closed] }
+        title: { type: string }
+        body: { type: string }
+        data: { type: object, properties: { jobId: { type: string }, applicationId: { type: string }, status: { type: string } } }
+        readAt: { type: [string, 'null'], format: date-time }
+        createdAt: { type: string, format: date-time }

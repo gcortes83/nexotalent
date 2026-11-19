@@ -1,3 +1,145 @@
+# NexoTalent AI · núcleo MVP
+
+Plataforma de reclutamiento con **match explicable** entre vacantes y candidatos. Este repositorio contiene el núcleo de punta a punta:
+subir CV → confirmar skills → radar y score → postular → stepper → el reclutador cambia el estatus.
+
+| Ruta | Qué es |
+|---|---|
+| `apps/api` | API · Node 24 + TypeScript + Fastify 5 + Zod, monolito modular hexagonal, PostgreSQL 16 + pgvector |
+| `apps/web` | Web · React 19 + Vite + TanStack Query + React Router + Recharts |
+| `tests/functional` | Pruebas funcionales en vivo (API y web levantadas) con `node:test` |
+| `tests/e2e` | E2E en navegador con Playwright |
+| `docker-compose.yml`, `apps/*/Dockerfile` | Bases de datos y stack completo en Docker |
+| `Makefile` | Atajos de desarrollo (`make help`) |
+
+## Inicio rápido
+
+**Requisitos:** Node.js ≥ 24 y npm ≥ 10, Git, `make` y Docker Desktop (para PostgreSQL o el stack completo).
+Para los E2E se usa Google Chrome instalado; si no lo tienes: `npx playwright install chromium` y `PW_CHANNEL=chromium`.
+
+### Opción A · Local (API y web en tu máquina, bases en Docker)
+
+```bash
+git clone https://github.com/gcortes83/nexotalent.git && cd nexotalent
+make setup    # solo la primera vez: npm ci, crea apps/api/.env y apps/web/.env, levanta las bases y migra + datos de demo
+make start    # API (:4000) y web (:5173) a la vez con recarga en caliente; Ctrl-C detiene los dos
+```
+
+¿Sin Docker? `make install env && make start-memory` arranca la API con almacenamiento en memoria (mismos datos sintéticos; se reinician al reiniciar la API).
+
+### Opción B · Todo en Docker
+
+```bash
+make docker-up     # construye las imágenes; levanta postgres, migrate (migra + datos de demo), api (:4000) y web (:8080)
+make docker-logs   # logs de API y web
+make docker-down   # detiene todo (el volumen de datos se conserva)
+```
+
+En Docker, nginx sirve la SPA y reenvía `/v1` y `/health` a la API (mismo origen, sin CORS). Cada `make docker-up` vuelve a cargar los datos de demo.
+
+### URLs para probar en local
+
+| Qué | Local (`make start`) | Docker (`make docker-up`) |
+|---|---|---|
+| Landing page | http://localhost:5173 | http://localhost:8080 |
+| Login (correo + contraseña, pestañas Candidato / Empleador) | http://localhost:5173/login | http://localhost:8080/login |
+| Interfaz en inglés (o selector ES / EN al pie de cualquier página) | http://localhost:5173/?lang=en | http://localhost:8080/?lang=en |
+| Login de demo (cuentas sin contraseña) | http://localhost:5173/login?demo=1 | http://localhost:8080/login?demo=1 |
+| Registro de candidato | http://localhost:5173/registro/candidato | http://localhost:8080/registro/candidato |
+| Registro de empleador | http://localhost:5173/registro/empleador | http://localhost:8080/registro/empleador |
+| Vacantes | http://localhost:5173/jobs | http://localhost:8080/jobs |
+| Detalle con radar y score | http://localhost:5173/jobs/job_backend_node | http://localhost:8080/jobs/job_backend_node |
+| Candidato · dashboard con stepper | http://localhost:5173/c/dashboard | http://localhost:8080/c/dashboard |
+| Candidato · perfil, CV y vacantes aplicadas | http://localhost:5173/c/profile | http://localhost:8080/c/profile |
+| Empleador · dashboard | http://localhost:5173/e/dashboard | http://localhost:8080/e/dashboard |
+| Empleador · mis vacantes (crear, editar, publicar, cerrar) | http://localhost:5173/e/vacantes | http://localhost:8080/e/vacantes |
+| Empleador · importar CSV / JSON / PDF | http://localhost:5173/e/importar | http://localhost:8080/e/importar |
+| Correos enviados | http://localhost:4000/v1/dev/emails (simulados, `EMAIL_PROVIDER=log`) | http://localhost:8025 (Mailpit) |
+| API · salud | http://localhost:4000/health | http://localhost:4000/health |
+| API · vacantes | http://localhost:4000/v1/jobs | http://localhost:4000/v1/jobs |
+| PostgreSQL desarrollo | `postgres://nexo:nexo_local_only@localhost:5432/nexotalent` | ídem |
+| PostgreSQL pruebas | `postgres://nexo:nexo_local_only@localhost:5433/nexotalent_test` | ídem |
+
+Contrato de la API: [`api/openapi.yaml`](api/openapi.yaml) (`npm run lint:api` lo valida).
+
+**Cuentas de demo** (todas sintéticas, `example.com`). Entra sin contraseña en `/login?demo=1` (`DEMO_AUTH=true`) o en `/login` con la contraseña **`Demo1234`** eligiendo la pestaña correcta. También puedes crear tus propias cuentas en `/registro/candidato` y `/registro/empleador`.
+
+| Cuenta | Rol | Para probar |
+|---|---|---|
+| `candidata@example.com` | Ana, candidata con skills | Radar, score, postulaciones, stepper |
+| `nueva@example.com` | Sofía, candidata nueva | Subir CV → confirmar skills → postular |
+| `candidato@example.com` | Luis, candidato Java | Postulación estancada (6 días) |
+| `valeria@` · `diego@` · `mariana@` · `jorge@example.com` | Candidatos con skills técnicas y soft skills (datos, DevOps, UX/UI, frontend) | Perfiles completos y postulaciones en Banca, AgroTech y Turismo |
+| `reclutador@example.com` | Rubén, reclutador Fintech | Candidatos por match, cambio de estatus |
+| `reclutadora@example.com` | Rita, reclutadora Retail | Postulaciones estancadas a 3/5 días |
+| `salud@example.com` · `logistica@example.com` · `edtech@example.com` · `banca@example.com` · `agro@example.com` · `turismo@example.com` | Reclutadores de Salud Digital, Logística, EdTech, Banca Digital, AgroTech y Turismo | Gestionar sus vacantes (catálogo de 100 vacantes en 6 países, 18 urgentes 🔥) |
+
+Ejemplo con la API directamente:
+
+```bash
+TOKEN=$(curl -s -X POST localhost:4000/v1/auth/demo-login -H 'content-type: application/json' \
+  -d '{"email":"candidata@example.com"}' | node -pe 'JSON.parse(require("fs").readFileSync(0)).token')
+curl -s localhost:4000/v1/jobs/job_backend_node/match -H "authorization: Bearer $TOKEN"
+```
+
+### Comandos `make`
+
+| Comando | Qué hace |
+|---|---|
+| `make setup` | Solo la primera vez: instala dependencias, crea los `.env`, levanta las bases y migra (y carga datos de demo) |
+| `make build` | Compila backend y frontend |
+| `make build backend` | Compila solo el backend (`apps/api/dist`) |
+| `make build frontend` | Compila solo el frontend (`apps/web/dist`) |
+| `make db-up` | Levanta las dos bases de datos (desarrollo `:5432` y pruebas `:5433`) y espera a que estén sanas |
+| `make start` | Levanta backend y frontend a la vez; Ctrl-C para los dos |
+| `make help` | Lista todos los atajos |
+| `make start-memory` | Como `start`, pero sin base de datos (`STORAGE=memory`) |
+| `make stop` | Detiene la API y la web levantadas con `make start` / `make start-memory` (para Docker: `make docker-down`) |
+| `make env` | Crea `apps/api/.env` y `apps/web/.env` desde `apps/*/env.example` (no sobrescribe) |
+| `make db-migrate` · `make db-seed` · `make db-reset` | Migraciones · recarga de datos de demo · ambos |
+| `make mail-up` | Levanta Mailpit (UI http://localhost:8025) para ver correos con `EMAIL_PROVIDER=smtp` |
+| `make db-down` | Detiene las bases (conserva los datos) |
+| `make typecheck` | Typecheck de API y web |
+| `make test` | Pruebas unitarias y HTTP (API), componentes y páginas (web) y hooks del harness |
+| `make test-api` · `make test-web` · `make test-hooks` | Cada suite por separado |
+| `make coverage` | Cobertura (umbral 80 % en dominio y aplicación) |
+| `make test-int` | Integración con PostgreSQL + pgvector reales (base de pruebas `:5433`) |
+| `make test-functional` | Pruebas funcionales en vivo contra la app levantada |
+| `make test-e2e` | E2E en navegador (Playwright + Chrome) contra la app levantada |
+| `make test-all` | Typecheck + unitarias + integración |
+| `make docker-build` · `make docker-up` · `make docker-down` · `make docker-logs` | Stack completo en Docker |
+| `make docker-seed` | Vuelve a migrar y cargar los datos de demo en Docker |
+| `make docker-test` | Funcionales + E2E contra el stack de Docker |
+| `make clean` | Borra `dist`, cobertura y reportes |
+
+`make buid …` funciona como alias de `make build …`.
+
+### Pruebas
+
+| Nivel | Dónde | Cómo se ejecuta | Qué cubre |
+|---|---|---|---|
+| Unitarias (API) | `apps/api/test/unit` | `make test-api` | Fórmula de match, máquina de estados, stepper, extractor y embeddings, configuración, casos de uso |
+| HTTP (API) | `apps/api/test/http` | `make test-api` | Flujos de candidato y empleador con Fastify `inject` (sin red) |
+| Unitarias (web) | `apps/web/src/**/*.test.tsx` | `make test-web` | Componentes (radar, stepper), cliente HTTP, páginas, guardas de rol y sesión |
+| Integración | `apps/api/test/integration` | `make test-int` | Adaptadores PostgreSQL + pgvector reales |
+| Funcionales en vivo | `tests/functional` | `make start` y en otra terminal `make test-functional` | Los casos de uso UC-00 a UC-16 (incluye registro, login con contraseña, perfil, gestión, cierre e importación de vacantes y notificaciones) contra la API real: auth, catálogo, match con ETag/304, CV → skills, postular, pipeline con `If-Match` (428/412/409), retiro, aislamiento entre organizaciones, estancadas 3/5; además, la SPA y el proxy `/v1` |
+| E2E | `tests/e2e` | `make start` y en otra terminal `make test-e2e` | Navegador real: landing, registros, login, radar y score, vacante creada y publicada, CV en archivo, postulación, toasts y marcas «Seleccionado» y «Vacante cerrada», importación CSV |
+
+Contra Docker: `make docker-up && make docker-test` (o `make test-functional WEB_URL=http://localhost:8080`).
+Las funcionales y E2E se pueden repetir: cada corrida usa una vacante a la que Sofía aún no se ha postulado. Tras unas 8 corridas contra PostgreSQL, recarga los datos con `make db-seed` (o `make docker-seed`). En modo memoria basta reiniciar la API.
+
+### Variables de entorno
+
+`make env` crea `apps/api/.env` y `apps/web/.env` (ignorados por git) a partir de las plantillas `apps/api/env.example` y `apps/web/env.example`. Variables principales de la API: `STORAGE` (`memory` | `postgres`), `DATABASE_URL`, `TEST_DATABASE_URL`, `JWT_SECRET` (≥ 32 caracteres), `DEMO_AUTH`, `CORS_ORIGINS`, `AI_PROVIDER=mock`, `EMAIL_PROVIDER` (`log` | `smtp`) y `SMTP_URL`. Las variables exportadas en la terminal tienen prioridad sobre el `.env`.
+
+### Problemas comunes
+
+- **`Docker no está corriendo`**: abre Docker Desktop, o usa `make start-memory`.
+- **Puerto 5432, 4000, 5173 u 8080 ocupado**: detén el otro proceso; no ejecutes `make start` y `make docker-up` a la vez (ambos usan el `:4000`).
+- **Las funcionales se omiten («Sofía ya se postuló a todas las vacantes»)**: `make db-seed`.
+
+---
+
 ## Índice
 
 0. [Ficha del proyecto](#0-ficha-del-proyecto)
@@ -113,45 +255,18 @@ Aun no disponible - `https://app.nexotalent.ai` (staging en AWS) · Storybook: `
 
 ### **1.4. Instrucciones de instalación:**
 
-**Requisitos:** Node.js 24 LTS, npm 10+, Docker y Docker Compose, Git, AWS CLI v2 (solo para despliegue), cuenta de prueba de Stripe, cuenta de Calendly (opcional en local, hay mock), acceso a Amazon Bedrock o modo `AI_PROVIDER=mock`.
+**Requisitos:** Node.js 24 LTS, npm 10+, Git, `make` y Docker Desktop (sin Docker: `make start-memory`).
+
+> El repositorio `gcortes83/nexotalent` contiene el **núcleo MVP** como monorepo (`apps/api` + `apps/web`), según [ADR-0001](docs/adr/0001-monolito-modular-mvp.md). El polyrepo `nexo-workspace` / `repos.yaml` de `docs/02` es la visión v2 y no existe todavía.
 
 ```bash
-# 1. Clonar el meta-repo y todos los repositorios del polyrepo
-git clone https://github.com/gcortes83/nexotalent.git
-cd nexo-workspace
-./scripts/clone-all.sh            # clona los repos de repos.yaml en ../
-
-# 2. Variables de entorno
-cp .env.example .env              # una vez por servicio: ./scripts/copy-env-examples.sh
-# Ajusta: AI_PROVIDER=mock|bedrock, AWS_REGION, STRIPE_SECRET_KEY (test), CALENDLY_* (opcional)
-
-# 3. Infraestructura local
-docker compose up -d              # postgres+pgvector, valkey, localstack, mailpit, stripe-mock,
-                                  # wiremock (SAP/Calendly), pact-broker, langfuse
-make localstack-init              # crea bus EventBridge, colas SQS + DLQ, buckets S3, SES
-
-# 4. Dependencias (paquetes compartidos primero)
-./scripts/install-all.sh          # npm ci en cada repo; requiere token de GitHub Packages en ~/.npmrc
-
-# 5. Base de datos: migraciones y seeds sintéticos
-make migrate                      # ejecuta drizzle-kit migrate en cada servicio (esquema por servicio)
-make seed                         # planes, taxonomía de skills, 200 vacantes, 500 candidatos, embeddings
-
-# 6. Levantar backend
-make dev-services                 # BFFs, microservicios, outbox relays y consumidores (puertos 4000-4020)
-
-# 7. Levantar frontends y design system
-cd ../nexo-ui && npm run storybook     # http://localhost:6006
-cd ../nexo-web && npm run dev          # http://localhost:5173
-cd ../nexo-admin && npm run dev        # http://localhost:5174
-
-# 8. Pruebas
-make test-all                     # unit + integración + contrato
-cd ../nexo-web && npx playwright test  # E2E
+make setup        # primera vez: dependencias, .env, bases de datos, migraciones y datos de demo
+make start        # local: API http://localhost:4000 · web http://localhost:5173
+make docker-up    # o todo en Docker: web http://localhost:8080 · API http://localhost:4000
+make test         # unitarias; con la app levantada: make test-functional y make test-e2e
 ```
 
-**Cuentas de prueba (seed):** `candidata@example.com`, `reclutador@example.com`, `admin@example.com` · contraseña `{{definida en seed}}` · tarjeta Stripe `4242 4242 4242 4242`.
-**Emails locales:** Mailpit en `http://localhost:8025`.
+Instrucciones completas, URLs, cuentas de demo y todos los comandos `make`: ver [Inicio rápido](#inicio-rápido).
 
 ---
 
@@ -243,7 +358,24 @@ flowchart TB
 
 ### **2.3. Descripción de alto nivel del proyecto y estructura de ficheros**
 
-El proyecto es un **polyrepo**. Los contratos (OpenAPI, AsyncAPI, JSON Schemas, OpenSpec, prompts y documentación) viven solo en `nexo-specs` y se distribuyen como el paquete `@nexo/contracts`.
+**Estructura actual (núcleo MVP, monorepo):**
+
+```
+nexotalent/
+├── AGENTS.md  CLAUDE.md  .claude/   # harness: hooks probados, subagentes, comandos
+├── openspec/                        # project.md, specs (matching, applications-pipeline, candidate-profile), changes
+├── api/openapi.yaml                 # contrato ejecutable del núcleo
+├── apps/api/                        # monolito modular hexagonal (Fastify + Zod)
+│   ├── src/modules/<ctx>/{domain,application}   # identity, jobs, candidates, matching, applications
+│   ├── src/infra/{http,db,memory,ai}            # adaptadores
+│   ├── src/ports.ts  src/seed/  migrations/  test/{unit,http,integration}
+├── apps/web/                        # React 19 + Vite + TanStack Query + Recharts
+│   └── src/{api,auth,components,pages,test}
+├── docs/                            # documentación, adr/, evidence/ (TDD rojo→verde), reviews/
+└── docker-compose.yml               # PostgreSQL 16 + pgvector
+```
+
+**Visión v2 (polyrepo):** el proyecto evoluciona a un **polyrepo**. Los contratos (OpenAPI, AsyncAPI, JSON Schemas, OpenSpec, prompts y documentación) viven solo en `nexo-specs` y se distribuyen como el paquete `@nexo/contracts`.
 
 ```
 nexo-workspace/        # meta-repo: repos.yaml, scripts, docker-compose, workflows reutilizables, AGENTS.md
@@ -940,7 +1072,7 @@ Backlog completo en [docs/13-historias-usuario.md](docs/13-historias-usuario.md)
 
 *Alcance técnico*
 1. Extensión `vector` (≥ 0.8) en Aurora.
-2. Columnas `embedding vector(1024)` en `jobs.job`, `candidates.candidate` y `ai.skills`; tabla `ai.rag_chunks`; tabla `ai.match_score`.
+2. Columnas `embedding vector(1024)` en `jobs.job` y `candidates.candidate`; taxonomía `matching.skill`; tabla `matching.match_score`. (`rag_chunks` se aplaza a v2.)
 3. Índices:
    ```sql
    CREATE INDEX CONCURRENTLY job_embedding_hnsw ON jobs.job
@@ -949,7 +1081,7 @@ Backlog completo en [docs/13-historias-usuario.md](docs/13-historias-usuario.md)
    CREATE INDEX job_filter_idx ON jobs.job (status, country, modality);
    CREATE INDEX job_fts_idx ON jobs.job USING gin (to_tsvector('spanish', title || ' ' || description));
    ```
-4. RLS en `ai.rag_chunks` por `tenant_id`.
+4. Aislamiento por organización en consultas del empleador (RLS en v2).
 5. Migraciones Drizzle solo *expand* y reversibles; seed sintético de 2,000 vacantes y 5,000 candidatos con embeddings.
 
 *Criterios de aceptación*

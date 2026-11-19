@@ -86,3 +86,18 @@ describe('ChangeApplicationStatus', () => {
 - Cobertura de líneas ≥ 80 % en dominio y casos de uso (no se persigue en adaptadores).
 - *Mutation testing* (Stryker) mensual en `applications` y `ai` (≥ 60 %).
 - PR bloqueado si fallan unit, integración, contrato, a11y, evals de IA o el análisis estático.
+
+## 8. Inventario real del MVP web (19/11/2026)
+
+| Nivel | Herramienta | Ubicación | Cantidad | Comando |
+|---|---|---|---|---|
+| Unit + HTTP (API) | Vitest + `app.inject` | `apps/api/test/{unit,http}` | 137 ✅ | `npm run test:api` |
+| Componentes y páginas (web) | Vitest + Testing Library + `fakeApi` | `apps/web/src/**/*.test.tsx` | 81 ✅ | `npm run test:web` |
+| Hooks del harness | `node:test` | `.claude/hooks` | 31 ✅ | `npm run test:hooks` |
+| Integración PostgreSQL | Vitest + pgvector real | `apps/api/test/integration` | ⏳ sin ejecutar para 0002–0004 | `make test-int` (Docker) |
+| Funcionales en vivo | `node:test` contra la app levantada | `tests/functional` | UC-00…UC-16 | `make test-functional` |
+| E2E | Playwright (`trace: retain-on-failure`) | `tests/e2e` | E2E-01…06, 10…16, 20…24 + auditoría responsiva (360/768/1280 px) | `make test-e2e` |
+
+`make test` corre los tres primeros niveles (verificado en verde el 19/11/2026). Pendientes: etiqueta `@smoke`, `make test-int`
+con Docker, evidencia TDD de C11–C17 y revisión adversarial (ver `prompts.md` C9).
+

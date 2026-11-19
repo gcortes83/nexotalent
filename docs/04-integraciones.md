@@ -108,7 +108,8 @@ sequenceDiagram
   - **Sincronización con Google Calendar** vía OAuth (scope `calendar.events`): se inserta/actualiza/cancela el evento automáticamente.
   - **Feed ICS** personal (`webcal://.../ics/{token}.ics`) para Outlook/Apple Calendar.
   - Recordatorios 24 h y 1 h antes por push/WhatsApp.
-- Al agendarse, la postulación avanza automáticamente a `interview_scheduled` (y vuelve a `shortlisted` si se cancela).
+- **v2:** al agendarse, la postulación avanza automáticamente a `interview_scheduled` (y vuelve a `shortlisted` si se cancela), con actor `system`.
+- **MVP (núcleo):** Calendly está simulado con un enlace fijo de agenda; el reclutador fija `interview_scheduled` manualmente con `PATCH /v1/applications/{id}/status`. Ambas vías respetan la misma máquina de estados (`openspec/specs/applications-pipeline`).
 
 ## 6. Pagos (Stripe)
 

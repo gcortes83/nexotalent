@@ -290,7 +290,20 @@ erDiagram
   }
 ```
 
-Tablas técnicas adicionales (no se muestran en el diagrama): `outbox_events` (por esquema), `processed_events`, `rag_chunks`, `ai_audit_log`, `consents`, `api_keys`.
+Tablas técnicas adicionales (no se muestran en el diagrama): `outbox_events` (por esquema), `processed_events`, `ai_audit_log`, `consents`, `api_keys`.
+
+> **Decisión (17/11/2026, feedback de la 1.ª entrega):** la tabla `rag_chunks` del copiloto RAG **se aplaza a v2** junto con el copiloto. El núcleo MVP implementa `matching.skill`, `jobs.job` y `candidates.candidate` con `embedding vector(1024)` y `matching.match_score` (ver `apps/api/migrations/0001_core_schema.sql`).
+
+> **Migraciones del MVP web (`apps/api/migrations`, expand-only, inmutables una vez aplicadas):**
+>
+> | Migración | Cambio |
+> |---|---|
+> | `0001_core_schema.sql` | Esquemas `identity`, `jobs`, `candidates`, `matching`, `applications`; `vector(1024)`, HNSW, GIN e índice parcial de estancadas |
+> | `0002_accounts_jobs_notifications.sql` | `identity."user".password_hash`; `jobs.job.closed_at`, `source_type` (`manual|seed|csv|json|pdf`), `external_id` (único por organización); estado `closed`; esquema y tabla `notifications.notification` con índices por usuario y no leídas |
+> | `0003_job_currency_usd.sql` | `currency` con default `USD` y `CHECK (currency = 'USD') NOT VALID` (moneda única, salario mensual) |
+> | `0004_job_urgent.sql` | `jobs.job.urgent boolean NOT NULL DEFAULT false` + índice parcial `(published_at DESC) WHERE status = 'published' AND urgent` |
+>
+> Las soft skills no agregan tablas: son skills de la taxonomía con categoría «Soft skills» que la vacante declara aparte (`softSkills`).
 
 ## 2. Descripción de entidades principales
 

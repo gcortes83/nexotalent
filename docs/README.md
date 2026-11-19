@@ -20,4 +20,6 @@ Plataforma de reclutamiento AI-native (polyrepo · Node.js · React · AWS). Est
 | 14 | [Tickets de trabajo](14-tickets-trabajo.md) | Backend, frontend y base de datos |
 | 15 | [Roadmap](15-roadmap.md) | Fases, plan de 8 semanas, riesgos |
 
-Los prompts para generar y construir todo esto están en [`../prompts.md`](../prompts.md); los de las apps móviles en [`../android-prompts.md`](../android-prompts.md) y [`../ios-prompts.md`](../ios-prompts.md).
+Estado real del MVP web (monolito modular en `apps/`): ver §1.1–1.2 de [07](07-api.md), §6 de [08](08-frontend-ux.md), §8 de [10](10-estrategia-testing.md), los tickets del change `add-accounts-jobs-notifications` en [14](14-tickets-trabajo.md) y [`../CHANGELOG.md`](../CHANGELOG.md).
+
+Los prompts para generar y construir todo esto están en [`../prompts.md`](../prompts.md) (FASE C: C0–C19 ejecutados en la CLI); los de las apps móviles en [`../android-prompts.md`](../android-prompts.md) y [`../ios-prompts.md`](../ios-prompts.md).

@@ -28,6 +28,32 @@ Convenciones: REST JSON, versionado en ruta (`/v1`), auth `Bearer` JWT de Cognit
 | GET/POST/PATCH/DELETE | `/v1/admin/{users,organizations,jobs,candidates}` | Administración | platform_admin |
 | POST | `/webhooks/{stripe,calendly,slack}` | Webhooks firmados | externo |
 
+### 1.1 Decisiones del núcleo MVP (17/11/2026)
+- **Contrato ejecutable:** [`../api/openapi.yaml`](../api/openapi.yaml) es la fuente de verdad del núcleo e incluye `GET /v1/bff/candidate/dashboard` (HU-02) y `GET /v1/bff/employer/dashboard`.
+- **Estatus:** el enum completo es `ApplicationStatus`. `PATCH /v1/applications/{id}/status` solo acepta `RecruiterSettableStatus` (`in_review, shortlisted, interview_scheduled, interview_done, offer, hired, rejected`): `submitted` es el estado inicial y `withdrawn` solo lo fija la candidata con `POST /v1/applications/{id}/withdraw`. Sin `If-Match` → `428`; versión distinta → `412`; transición inválida → `409`.
+- **Entrevista agendada:** en el MVP el reclutador la fija manualmente. En v2 la fija el webhook de Calendly con actor `system` (docs/04 §5).
+
+### 1.2 Endpoints implementados en el MVP web · OpenAPI 0.2.0 (change `add-accounts-jobs-notifications`, 17/11/2026)
+
+| Método | Ruta | Uso | Rol |
+|---|---|---|---|
+| POST | `/v1/auth/register/candidate` · `/v1/auth/register/employer` | Registro (el empleador crea su organización) → `201` con JWT; `409 email-taken`; `422` | público |
+| POST | `/v1/auth/login` | Correo + contraseña + `kind` (`candidate`/`employer`); `401` uniforme | público |
+| POST | `/v1/auth/demo-login` | Cuentas de demo (solo `DEMO_AUTH=true`; web `/login?demo=1`) | público |
+| GET | `/v1/jobs` | Catálogo con `q`, `modality`, `seniority`, `country`, `minSalary` (USD), `skills`, `urgent`, orden y paginación → `items`, `total`, `page`, `pageSize`, `facets` | público |
+| GET/PUT | `/v1/candidates/me` | Ver / actualizar los datos profesionales del perfil | candidate |
+| POST | `/v1/candidates/me/resume/file` | CV en PDF (magic bytes), TXT o MD → skills propuestas | candidate |
+| GET/POST | `/v1/employer/jobs` | Listar / crear vacantes de la organización (borrador o publicada) | recruiter, employer_admin |
+| GET/PUT | `/v1/employer/jobs/{jobId}` | Ver / editar (`409 job-not-editable`) | recruiter, employer_admin |
+| POST | `/v1/employer/jobs/{jobId}/publish` | Publicar (pago simulado; `422` sin skills) | recruiter, employer_admin |
+| POST | `/v1/employer/jobs/{jobId}/close` | Cerrar = soft delete (`status = closed`); notifica a postulantes | recruiter, employer_admin |
+| POST | `/v1/employer/jobs/imports` | Importar CSV / JSON (`CanonicalJob`) / PDF, ≤ 500 por archivo, reporte por fila, upsert por `externalId` | recruiter, employer_admin |
+| GET | `/v1/notifications` | Notificaciones del usuario (`kind`, `data.jobTitle`, `readAt`) | autenticado |
+| POST | `/v1/notifications/{id}/read` · `/v1/notifications/read-all` | Marcar como leídas | autenticado |
+
+Cambios de esquema: `Job.urgent`, `Job.softSkills`, `Job.status` agrega `closed`, `currency` siempre `USD`. La fuente de verdad es
+[`../api/openapi.yaml`](../api/openapi.yaml); los tipos del cliente están en `apps/web/src/api/types.ts`.
+
 ## 2. Endpoints principales (OpenAPI 3.1)
 
 ```yaml

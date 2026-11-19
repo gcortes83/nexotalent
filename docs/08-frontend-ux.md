@@ -92,3 +92,29 @@ Usuarios, organizaciones, vacantes, candidatos (CRUD, suspensión, *impersonatio
 - Virtualización de listas largas (TanStack Virtual).
 - Imágenes AVIF/WebP, fuentes `font-display: swap` con *subset*.
 - Presupuesto: **LCP < 2.0 s**, **INP < 200 ms**, **CLS < 0.05**, JS inicial < 180 KB gzip; verificado con Lighthouse CI.
+
+## 6. Implementación del MVP web (`apps/web`, al 19/11/2026)
+
+> La visión anterior (nexo-ui, Tailwind, Radix, TanStack Router) sigue siendo v2. El MVP usa React 19 + Vite, React Router,
+> TanStack Query, CSS propio con tokens (`styles.css`) y Recharts *lazy* + un SVG propio (`RadarSvg`) para los radares.
+
+| Ruta | Pantalla | Rol |
+|---|---|---|
+| `/` | Landing: accesos a registro de candidatos, empleadores y vacantes; radar de ejemplo (510 px); leyenda animada «NexoTalent: la primera plataforma enfocada en los candidatos TI.»; logo ×3 | público |
+| `/login` · `/login?demo=1` | Login con pestañas candidato/empleador · cuentas de demo; `?next=` seguro | público |
+| `/registro/candidato` · `/registro/empleador` | Registro | público |
+| `/jobs` | Lista al 90 % del ancho, filtros facetados (320 px), chips, orden, paginación, estado en la URL, buscador con lupa, 🔥 urgentes, brillo de selección (1 s) | público |
+| `/jobs/:jobId` | Detalle: descripción por secciones, score + radares de skills técnicas y soft skills (480 px), fortalezas/brechas, postular (o invitación a registrarse) | público / candidate |
+| `/c/dashboard` · `/c/profile` | Stepper, recomendadas, retiro · datos, CV (archivo o texto), skills y soft skills, vacantes aplicadas con marcas | candidate |
+| `/e/dashboard` · `/e/jobs/:jobId` | Estancadas 3/5 y vacantes · candidatos por match y cambio de estatus (`If-Match`) | recruiter, employer_admin |
+| `/e/vacantes` · `/e/vacantes/nueva` · `/e/vacantes/:jobId/editar` · `/e/importar` | Gestión, formulario (urgente, soft skills, USD) e importación CSV/JSON/PDF | recruiter, employer_admin |
+
+**Transversal**
+- **Fondo animado de IA** (`AiBackground`, canvas) montado una vez en el layout; superficies «de vidrio».
+- **i18n ES/EN** sin dependencias (`src/i18n`, diccionarios tipados), selector fijo a la derecha del footer, `nexo.lang`, `?lang=`.
+- **Responsivo**: cortes 480/720/1024 px, menú plegable, `table--stack`, inputs de 16 px; auditoría `tests/e2e/responsive.spec.ts`.
+- **Soft skills** en verde (`--nx-soft: #34d399`) en radares, perfil y formulario.
+- **Notificaciones**: `NotificationWatcher` (polling 10 s) + `Toast`; marcas `ApplicationMarks`.
+- **Footer** con placeholders (`site.ts`), textos legales en 2 líneas y la sección de apps móviles ocultable (`MobileAppsSection`, `nexo.hideApps`; URLs provisionales).
+- **Movimiento**: todo se desactiva con `prefers-reduced-motion`. JS inicial < 180 KB gzip.
+
